@@ -1,0 +1,54 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin";
+import { isValidUuid } from "@/lib/security";
+
+export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.reason }, { status: 403 });
+  }
+
+  const body = (await request.json().catch(() => null)) as {
+    id?: string;
+    name?: string;
+    startsAt?: string;
+    endsAt?: string;
+    minJagsolAmount?: number;
+    groupLockAt?: string | null;
+    isActive?: boolean;
+  } | null;
+
+  if (!body?.id || !isValidUuid(body.id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
+
+  const update: Record<string, unknown> = {};
+  if (body.name != null) update.name = body.name;
+  if (body.startsAt != null) update.starts_at = body.startsAt;
+  if (body.endsAt != null) update.ends_at = body.endsAt;
+  if (body.minJagsolAmount != null) update.min_jagsol_amount = body.minJagsolAmount;
+  if ("groupLockAt" in body) update.group_lock_at = body.groupLockAt;
+  if (body.isActive != null) update.is_active = body.isActive;
+
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ error: "no_fields" }, { status: 400 });
+  }
+
+  const supabase = await createServiceRoleClient();
+  const { data, error } = await supabase
+    .from("tournaments")
+    .update(update)
+    .eq("id", body.id)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json(
+      { error: "update_failed", details: error.message },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ tournament: data });
+}
