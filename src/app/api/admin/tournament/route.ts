@@ -9,7 +9,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: auth.reason }, { status: 403 });
   }
 
-  const body = (await request.json().catch(() => null)) as {
+  let body: {
     id?: string;
     name?: string;
     startsAt?: string;
@@ -18,6 +18,12 @@ export async function PATCH(request: NextRequest) {
     groupLockAt?: string | null;
     isActive?: boolean;
   } | null;
+  try {
+    body = (await request.json()) as typeof body;
+  } catch (err) {
+    console.error("[admin/tournament PATCH] invalid JSON", err);
+    return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
 
   if (!body?.id || !isValidUuid(body.id)) {
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
@@ -48,6 +54,17 @@ export async function PATCH(request: NextRequest) {
       { error: "update_failed", details: error.message },
       { status: 500 },
     );
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_log").insert({
+    admin_user_id: auth.state.userId,
+    action: "update_tournament",
+    target_table: "tournaments",
+    target_id: body.id,
+    changes: update,
+  });
+  if (auditError) {
+    console.error("[admin/tournament PATCH] audit log insert failed", auditError);
   }
 
   return NextResponse.json({ tournament: data });

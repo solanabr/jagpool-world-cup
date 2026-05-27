@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { resolveAuthenticatedUserState } from "@/lib/user-state";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { isAdminWallet } from "@/lib/admin";
 import { WalletStatus } from "@/components/auth/wallet-status";
 
 export async function Header() {
@@ -18,9 +17,7 @@ export async function Header() {
     validatorName = data?.name ?? null;
   }
 
-  const isAdmin =
-    !!state &&
-    (state.profile?.is_admin === true || isAdminWallet(state.walletAddress));
+  const isAdmin = !!state && state.profile?.is_admin === true;
 
   return (
     <header className="border-b border-white/10 bg-background/80 backdrop-blur">

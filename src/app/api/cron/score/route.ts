@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { timingSafeEqual } from "@/lib/security";
-import { scoreMatchPrediction } from "@/lib/scoring/compute";
-import type { Match, MatchPrediction } from "@/types/db";
+import { scoreMatchAndPersist } from "@/lib/scoring/persist";
+import type { Match } from "@/types/db";
 
 export async function GET(request: NextRequest) {
   const authz = request.headers.get("authorization") ?? "";
@@ -29,6 +29,10 @@ export async function GET(request: NextRequest) {
   let totalEvents = 0;
   const failed: { matchId: string; reason: string }[] = [];
 
+  // Cron is now a safety net — finalize_match scores knockout predictions
+  // inline. Cron picks up anything missed (e.g. inline scoring failed) by
+  // skipping matches already scored and processing the rest. The shared
+  // `scoreMatchAndPersist` is the single source of truth for the math.
   for (const match of (matches as Match[]) ?? []) {
     try {
       const { count, error: countError } = await supabase
@@ -40,34 +44,9 @@ export async function GET(request: NextRequest) {
       }
       if ((count ?? 0) > 0) continue;
 
-      const { data: preds, error: predsError } = await supabase
-        .from("match_predictions")
-        .select("*")
-        .eq("match_id", match.id);
-      if (predsError) {
-        throw new Error(`predictions fetch: ${predsError.message}`);
-      }
-
-      const events = ((preds as MatchPrediction[]) ?? []).flatMap((p) =>
-        scoreMatchPrediction(p, match),
-      );
-      if (events.length === 0) continue;
-
-      const { error: insertError } = await supabase.from("scores").insert(
-        events.map((e) => ({
-          user_id: e.userId,
-          match_id: e.matchId,
-          group_prediction_id: e.groupPredictionId,
-          match_prediction_id: e.matchPredictionId,
-          points: e.points,
-          reason: e.reason,
-        })),
-      );
-      if (insertError) {
-        throw new Error(`scores insert: ${insertError.message}`);
-      }
-
-      totalEvents += events.length;
+      const scoring = await scoreMatchAndPersist(supabase, match);
+      if (scoring.error) throw new Error(scoring.error);
+      totalEvents += scoring.eventsWritten;
     } catch (err) {
       const reason = (err as Error).message;
       console.error("[cron/score] match failed", match.id, reason);
@@ -75,8 +54,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({
-    events_written: totalEvents,
-    failed,
-  });
+  // 207 Multi-Status when any match failed — Vercel cron will surface this as
+  // an alert. 200 only if everything succeeded.
+  if (failed.length > 0) {
+    return NextResponse.json(
+      { events_written: totalEvents, failed },
+      { status: 207 },
+    );
+  }
+  return NextResponse.json({ events_written: totalEvents, failed });
 }

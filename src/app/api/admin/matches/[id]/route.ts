@@ -1,16 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
-import { clampInt, isValidUuid } from "@/lib/security";
+import { isValidUuid } from "@/lib/security";
 
+// PATCH does NOT accept winner / homeScore / awayScore — those go through
+// finalize_match RPC which enforces knockout-cannot-draw, locking, scoring.
+// Allowing them here would let admins bypass those invariants.
 type PatchBody = {
   homeTeam?: string | null;
   awayTeam?: string | null;
   kickoffAt?: string;
-  status?: "upcoming" | "live" | "locked" | "completed" | "cancelled";
-  homeScore?: number | null;
-  awayScore?: number | null;
-  winner?: "home" | "away" | "draw" | null;
+  status?: "upcoming" | "live" | "locked" | "cancelled";
   parentMatchA?: string | null;
   parentMatchB?: string | null;
 };
@@ -29,33 +29,49 @@ export async function PATCH(
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
 
-  const body = (await request.json().catch(() => null)) as PatchBody | null;
+  let body: PatchBody | null;
+  try {
+    body = (await request.json()) as PatchBody | null;
+  } catch (err) {
+    console.error("[admin/matches PATCH] invalid JSON", err);
+    return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
   if (!body) return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+
+  // Reject any attempt to patch result-related fields — must use finalize_match.
+  if (
+    "winner" in body ||
+    "homeScore" in body ||
+    "awayScore" in body
+  ) {
+    return NextResponse.json(
+      {
+        error: "use_finalize_match",
+        details:
+          "Use POST /api/admin/finalize-match to set result fields. PATCH cannot bypass scoring/locking invariants.",
+      },
+      { status: 400 },
+    );
+  }
 
   const update: Record<string, unknown> = {};
   if ("homeTeam" in body) update.home_team = body.homeTeam;
   if ("awayTeam" in body) update.away_team = body.awayTeam;
   if ("kickoffAt" in body) update.kickoff_at = body.kickoffAt;
-  if ("status" in body) update.status = body.status;
-  if ("homeScore" in body) {
-    if (body.homeScore != null) {
-      const n = clampInt(body.homeScore, 0, 99);
-      if (n === null) return NextResponse.json({ error: "invalid_score" }, { status: 400 });
-      update.home_score = n;
-    } else {
-      update.home_score = null;
+  if ("status" in body) {
+    // Defend at runtime against status = 'completed' even though the type
+    // excludes it — body is HTTP input, the type is just a hint.
+    if ((body.status as unknown as string) === "completed") {
+      return NextResponse.json(
+        {
+          error: "use_finalize_match",
+          details: "Use POST /api/admin/finalize-match to mark a match completed.",
+        },
+        { status: 400 },
+      );
     }
+    update.status = body.status;
   }
-  if ("awayScore" in body) {
-    if (body.awayScore != null) {
-      const n = clampInt(body.awayScore, 0, 99);
-      if (n === null) return NextResponse.json({ error: "invalid_score" }, { status: 400 });
-      update.away_score = n;
-    } else {
-      update.away_score = null;
-    }
-  }
-  if ("winner" in body) update.winner = body.winner;
   if ("parentMatchA" in body) update.parent_match_a = body.parentMatchA;
   if ("parentMatchB" in body) update.parent_match_b = body.parentMatchB;
 
@@ -81,13 +97,16 @@ export async function PATCH(
     return NextResponse.json({ error: "match_not_found" }, { status: 404 });
   }
 
-  await supabase.from("admin_audit_log").insert({
+  const { error: auditError } = await supabase.from("admin_audit_log").insert({
     admin_user_id: auth.state.userId,
     action: "update_match",
     target_table: "matches",
     target_id: id,
     changes: update,
   });
+  if (auditError) {
+    console.error("[admin/matches PATCH] audit log insert failed", auditError);
+  }
 
   return NextResponse.json({ match: data });
 }

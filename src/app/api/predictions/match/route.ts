@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as
+  let body:
     | {
         matchId?: string;
         winner?: "home" | "away" | "draw";
@@ -17,6 +17,12 @@ export async function POST(request: NextRequest) {
         awayScore?: number;
       }
     | null;
+  try {
+    body = (await request.json()) as typeof body;
+  } catch (err) {
+    console.error("[predictions/match] invalid JSON", err);
+    return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
 
   if (
     !body?.matchId ||

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -20,6 +21,7 @@ export default async function AdminPage() {
     completedRes,
     pendingScoringRes,
     newUsersRes,
+    finalizedGroupsRes,
   ] = await Promise.all([
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase
@@ -44,6 +46,9 @@ export default async function AdminPage() {
       .from("users")
       .select("id", { count: "exact", head: true })
       .gte("created_at", dayAgo),
+    supabase
+      .from("group_results")
+      .select("group_name", { count: "exact", head: true }),
   ]);
 
   return (
@@ -64,7 +69,7 @@ export default async function AdminPage() {
         <h2 className="text-sm text-foreground/60 uppercase mb-3">
           Match status
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Stat label="Upcoming" value={upcomingRes.count ?? 0} />
           <Stat label="Completed" value={completedRes.count ?? 0} />
           <Stat
@@ -72,15 +77,38 @@ export default async function AdminPage() {
             value={pendingScoringRes.count ?? 0}
             highlight={!!pendingScoringRes.count}
           />
+          <Stat
+            label="Groups finalized"
+            value={finalizedGroupsRes.count ?? 0}
+          />
         </div>
       </div>
 
-      <p className="text-xs text-foreground/40">
-        Admin APIs: <code>POST /api/admin/matches</code>,{" "}
-        <code>PATCH /api/admin/matches/[id]</code>,{" "}
-        <code>POST /api/admin/validators</code>,{" "}
-        <code>PATCH /api/admin/tournament</code>. Full UI is the frontend dev&apos;s scope.
-      </p>
+      <div>
+        <h2 className="text-sm text-foreground/60 uppercase mb-3">Admin tools</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <AdminLink
+            href="/admin/matches"
+            title="Match results"
+            body="Finalize matches with score + winner. Rescore on correction."
+          />
+          <AdminLink
+            href="/admin/groups"
+            title="Group advancers"
+            body="Record who actually advanced from each group. Auto-scores predictions."
+          />
+          <AdminLink
+            href="/admin/users"
+            title="User management"
+            body="Grant/revoke admin. View signed-in users."
+          />
+          <AdminLink
+            href="/admin/rewards"
+            title="Reward snapshots"
+            body="Snapshot the final leaderboard. Track payout status."
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -103,5 +131,24 @@ function Stat({
         {value}
       </p>
     </Card>
+  );
+}
+
+function AdminLink({
+  href,
+  title,
+  body,
+}: {
+  href: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <Link href={href} className="no-underline">
+      <Card className="hover:border-jagpool-primary/50 transition cursor-pointer">
+        <h3 className="font-semibold mb-1">{title}</h3>
+        <p className="text-sm text-foreground/70">{body}</p>
+      </Card>
+    </Link>
   );
 }

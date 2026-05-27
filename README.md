@@ -1,8 +1,8 @@
 # JagPool World Cup 2026
 
-Prediction game platform for FIFA World Cup 2026, built by [Superteam Brazil](https://superteam.fun/br) for JagPool. Users sign in with their Solana wallet, hold a minimum amount of JagSOL, pick a validator team, and predict tournament outcomes. The validator whose users accumulate the most points wins additional stake from JagPool; the top 10 individual users win SPL token prizes.
+Prediction game platform for FIFA World Cup 2026, built by [Superteam Brazil](https://superteam.fun/br) for JagPool. Users sign in with their Solana wallet, hold a minimum amount of JagSOL, pick a validator team, and predict tournament outcomes. The validator whose users accumulate the most points wins additional stake from JagPool; the top individual users win SPL token prizes.
 
-**Status:** MVP foundation (Phase 1). Backend, schema, and placeholder UI are in place. UI refinement is in progress.
+**Status:** feature-complete backend + working prediction/scoring/leaderboard flows. Frontend polish in progress.
 
 ## Stack
 
@@ -18,46 +18,73 @@ Prediction game platform for FIFA World Cup 2026, built by [Superteam Brazil](ht
 cp .env.example .env.local
 # Fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
 # SUPABASE_SERVICE_ROLE_KEY, WALLET_PASSWORD_PEPPER, NEXT_PUBLIC_JAGSOL_MINT,
-# CRON_SECRET, ADMIN_WALLET_ALLOWLIST
+# CRON_SECRET
 
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
+
+**Admin bootstrap:** there is no env-var allowlist. To make the first admin, run this SQL once against the live DB:
+
+```sql
+UPDATE public.users SET is_admin = true WHERE wallet_address = '<pubkey>';
+```
+
+After that, additional admins are granted from `/admin/users` in the app.
 
 ## Database
 
-Migrations live in `supabase/migrations/`. The Supabase project is shared with two other Superteam Brazil apps (`bh-onchain`, `superteam-maker`); before applying our migrations to it, run:
+Migrations live in `supabase/migrations/`. Before any destructive schema change against the live DB, take a backup:
 
 ```bash
-pg_dump "postgres://..." > ~/Desktop/supabase-backup-2026-05-26.sql
+pg_dump "postgres://..." > supabase-backup.sql
 ```
 
-Then either:
+**Schema layout:**
 
-- Apply our migrations via the Supabase CLI (`supabase db push`), OR
-- Paste each `.sql` file into the Supabase SQL editor in numeric order.
+- `supabase/schema.sql` — single-file baseline for **fresh DB setups**. Apply once against a clean Postgres and you get the full schema. Not idempotent (contains plain `create type`, `create policy` statements that would error on a second apply). Designed for `psql -f` on an empty DB, not re-runs.
+- `supabase/migrations/` — **forward-going migrations only**. The supabase CLI applies these to the live DB. Currently empty (everything applied has been moved to `_archive/`).
+- `supabase/migrations/_archive/` — historical incremental migrations (00001..00026). Kept for reference; not active. The live DB has all of these tracked in `supabase_migrations.schema_migrations`.
+
+**For fresh setups:** `psql -f supabase/schema.sql` on a clean DB.
+**For ongoing schema work:** add new migrations as `00027_*.sql`, `00028_*.sql`, etc. in `supabase/migrations/`. After applying, append the SQL to `supabase/schema.sql` so the baseline stays current, then move the migration file to `_archive/`.
 
 ## Architecture
 
-- `src/app/(public)/` — no auth (landing, /auth)
-- `src/app/(app)/` — auth-required (dashboard, onboarding, predictions, leaderboard, admin)
+- `src/app/(public)/` — no auth (landing page, SIWS sign-in)
+- `src/app/(app)/` — auth-required (dashboard, onboarding, predictions, matches, leaderboard, admin)
 - `src/app/api/` — route handlers (SIWS, predictions, admin, cron)
-- `src/lib/supabase/` — three Supabase client roles
+- `src/lib/supabase/` — three Supabase client roles (browser, server, service-role)
 - `src/lib/siws/` — Sign in with Solana flow
 - `src/lib/solana/` — RPC + JagSOL balance check
-- `src/lib/scoring/` — pure functions for points
-- `supabase/migrations/` — schema + RLS + RPCs + views
+- `src/lib/scoring/` — pure scoring functions (`compute.ts`) + DB persistence (`persist.ts`)
+- `supabase/migrations/` — baseline schema + future incremental migrations
 
-## Phases
+## Routes
 
-| Phase | Window | Scope |
-|------|--------|-------|
-| 1 | May 25 – Jun 1 | MVP foundation: auth, validator selection, group predictions |
-| 2 | Jun 1 – Jun 10 | Match prediction system + scoring engine |
-| 3 | Jun 11 – Jun 27 | Live leaderboard + Solana House integration |
-| 4 | Jun 28 – Jul 3 | Knockout bracket |
-| 5 | Jul 4 – Jul 19 | Finals + rewards |
-| 6 | Jul 20+ | Wrap-up + analytics |
+**User-facing:**
+- `/` — landing, sign in with Solana
+- `/onboarding` — username + validator selection (one-time)
+- `/dashboard` — overview, CTA card for predictions, stats
+- `/predictions` — single timeline page with collapsible stage sections (groups + champion, R32, R16, QF, Semi, Third, Final). Auto-opens the next actionable stage.
+- `/matches` — full schedule + results
+- `/leaderboard` — live standings, your personal status, payouts when a snapshot is finalized
+
+**Admin:**
+- `/admin/matches` — finalize match (scores knockout predictions inline), rescore on correction
+- `/admin/groups` — set group advancers (auto-scores group predictions)
+- `/admin/users` — grant/revoke admin
+- `/admin/rewards` — create reward snapshots, manage status (draft → finalized → paid)
+
+## Testing
+
+```bash
+pnpm test
+```
+
+Unit tests in `src/lib/__tests__/` cover the scoring engine, sanitizers, formatters, knockout helpers, and SIWS message builder.
+
+DB integration tests aren't included — RPCs and route handlers are smoke-tested manually before each phase rollout.
 
 ## License
 

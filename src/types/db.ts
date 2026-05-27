@@ -107,12 +107,31 @@ export type MatchPrediction = {
 export type Score = {
   id: string;
   user_id: string;
+  tournament_id: string | null;
   match_id: string | null;
   group_prediction_id: string | null;
   match_prediction_id: string | null;
+  champion_prediction_user_id: string | null;
   points: number;
   reason: string;
   created_at: string;
+};
+
+export type GroupResult = {
+  tournament_id: string;
+  group_name: string;
+  first_place_team: string;
+  second_place_team: string;
+  finalized_at: string;
+  finalized_by: string;
+};
+
+export type ChampionPrediction = {
+  user_id: string;
+  tournament_id: string;
+  team: string;
+  submitted_at: string;
+  locked: boolean;
 };
 
 export type UserLeaderboardRow = {

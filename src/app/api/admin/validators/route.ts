@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: auth.reason }, { status: 403 });
   }
 
-  const body = (await request.json().catch(() => null)) as {
+  let body: {
     voteAccount?: string;
     name?: string;
     description?: string | null;
@@ -17,6 +17,12 @@ export async function POST(request: NextRequest) {
     isActive?: boolean;
     displayOrder?: number;
   } | null;
+  try {
+    body = (await request.json()) as typeof body;
+  } catch (err) {
+    console.error("[admin/validators POST] invalid JSON", err);
+    return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
 
   if (!body?.voteAccount || !body?.name) {
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
@@ -42,6 +48,17 @@ export async function POST(request: NextRequest) {
       { error: "insert_failed", details: error.message },
       { status: 500 },
     );
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_log").insert({
+    admin_user_id: auth.state.userId,
+    action: "create_validator",
+    target_table: "validators",
+    target_id: data.id,
+    changes: body as Record<string, unknown>,
+  });
+  if (auditError) {
+    console.error("[admin/validators POST] audit log insert failed", auditError);
   }
 
   return NextResponse.json({ validator: data });

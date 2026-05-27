@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: auth.reason }, { status: 403 });
   }
 
-  const body = (await request.json().catch(() => null)) as {
+  let body: {
     tournamentId?: string;
     stage?: string;
     groupName?: string | null;
@@ -20,6 +20,12 @@ export async function POST(request: NextRequest) {
     parentMatchA?: string | null;
     parentMatchB?: string | null;
   } | null;
+  try {
+    body = (await request.json()) as typeof body;
+  } catch (err) {
+    console.error("[admin/matches POST] invalid JSON", err);
+    return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
 
   if (
     !body?.tournamentId ||
@@ -54,13 +60,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await supabase.from("admin_audit_log").insert({
+  const { error: auditError } = await supabase.from("admin_audit_log").insert({
     admin_user_id: auth.state.userId,
     action: "create_match",
     target_table: "matches",
     target_id: data.id,
     changes: body as Record<string, unknown>,
   });
+  if (auditError) {
+    // Audit failure shouldn't block the operation — but we must surface it.
+    console.error("[admin/matches] audit log insert failed", auditError);
+  }
 
   return NextResponse.json({ match: data });
 }

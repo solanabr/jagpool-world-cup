@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   const state = await resolveAuthenticatedUserState();
-  if (!state) redirect("/auth");
+  if (!state) redirect("/");
   if (state.profile?.validator_locked_at) redirect("/dashboard");
 
   const supabase = await createServerSupabaseClient();
