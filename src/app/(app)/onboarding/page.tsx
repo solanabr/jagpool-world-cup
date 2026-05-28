@@ -19,13 +19,52 @@ export default async function OnboardingPage() {
     .order("display_order", { ascending: true });
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Almost there</h1>
-      <p className="text-foreground/70 mb-8">
-        Pick your username and the validator that will receive your points. Your
-        validator is locked once confirmed.
-      </p>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <StepDot done />
+          <div className="h-px w-6 bg-jagpool-primary/40" />
+          <StepDot active />
+          <span className="text-xs text-foreground/40 ml-2 uppercase tracking-wider">
+            Setup · Step 2 of 2
+          </span>
+        </div>
+        <h1 className="text-4xl font-black tracking-tight">
+          Pick your{" "}
+          <span className="text-jagpool-primary">validator team</span>
+        </h1>
+        <p className="text-foreground/55 max-w-xl leading-relaxed">
+          Your points contribute to your validator&apos;s collective score —
+          the winning validator earns extra SOL delegation from JagPool.{" "}
+          <strong className="text-foreground/75">
+            This choice is permanent.
+          </strong>
+        </p>
+      </div>
+
       <OnboardingForm validators={(validators as Validator[]) ?? []} />
     </div>
+  );
+}
+
+function StepDot({ done, active }: { done?: boolean; active?: boolean }) {
+  if (done) {
+    return (
+      <div className="w-6 h-6 rounded-full bg-jagpool-primary flex items-center justify-center shrink-0">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+      </div>
+    );
+  }
+  if (active) {
+    return (
+      <div className="w-6 h-6 rounded-full bg-jagpool-primary/20 border-2 border-jagpool-primary flex items-center justify-center shrink-0">
+        <div className="w-2 h-2 rounded-full bg-jagpool-primary" />
+      </div>
+    );
+  }
+  return (
+    <div className="w-6 h-6 rounded-full bg-white/10 border border-white/20 shrink-0" />
   );
 }

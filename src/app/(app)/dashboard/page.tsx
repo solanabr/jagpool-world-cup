@@ -1,13 +1,14 @@
 import Link from "next/link";
+import { Target } from "lucide-react";
 import { requireOnboardedUser } from "@/lib/user-state";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { Card } from "@/components/ui/card";
 import { ValidatorLogo } from "@/components/ui/validator-logo";
 import { Countdown } from "@/components/predictions/countdown";
 import { formatKickoffBRT } from "@/lib/wc2026/dates";
 import { flagFor } from "@/lib/wc2026/flags";
 import { WC2026_GROUPS } from "@/lib/wc2026/groups";
 import type { Match, Tournament } from "@/types/db";
+import type { UserLeaderboardRow } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
@@ -19,17 +20,13 @@ export default async function DashboardPage() {
 
   const [
     tournamentRes,
-    pointsRes,
+    leaderboardRes,
     validatorRes,
     predsCountRes,
     championRes,
     nextMatchRes,
   ] = await Promise.all([
-    supabase
-      .from("tournaments")
-      .select("*")
-      .eq("is_active", true)
-      .maybeSingle(),
+    supabase.from("tournaments").select("*").eq("is_active", true).maybeSingle(),
     supabase.rpc("get_user_leaderboard", { p_limit: 1000 }),
     validatorId
       ? supabase
@@ -56,19 +53,14 @@ export default async function DashboardPage() {
       .maybeSingle(),
   ]);
 
-  if (tournamentRes.error) console.error("[dashboard] tournament fetch failed", tournamentRes.error);
-  if (pointsRes.error) console.error("[dashboard] leaderboard RPC failed", pointsRes.error);
-  if ("error" in validatorRes && validatorRes.error) {
-    console.error("[dashboard] validator fetch failed", validatorRes.error);
-  }
-  if (predsCountRes.error) console.error("[dashboard] preds count failed", predsCountRes.error);
-  if (championRes.error) console.error("[dashboard] champion fetch failed", championRes.error);
-  if (nextMatchRes.error) console.error("[dashboard] next match fetch failed", nextMatchRes.error);
-
-  const myRow = (pointsRes.data as { user_id: string; total_points: number }[] | null)?.find(
-    (r) => r.user_id === state.userId,
-  );
+  const allUsers = (leaderboardRes.data as UserLeaderboardRow[] | null) ?? [];
+  const myIndex = allUsers.findIndex((r) => r.user_id === state.userId);
+  const myRow = myIndex >= 0 ? allUsers[myIndex] : null;
   const points = myRow?.total_points ?? 0;
+  const myRank = myIndex >= 0 ? myIndex + 1 : null;
+  const totalRanked = allUsers.length;
+  const top3 = allUsers.slice(0, 3);
+
   const validator = validatorRes.data;
   const groupsPicked = predsCountRes.count ?? 0;
   const championPicked = !!(championRes.data as { team: string } | null);
@@ -76,187 +68,352 @@ export default async function DashboardPage() {
   const tournament = tournamentRes.data as Tournament | null;
   const totalGroups = WC2026_GROUPS.length;
 
-  // The lock deadline is the moment that matters for the user — that's when
-  // they can no longer submit picks. If no lock_at is configured, fall back
-  // to the first match's kickoff (predictions effectively lock when matches
-  // start anyway).
   const lockAtIso = tournament?.group_lock_at ?? nextMatch?.kickoff_at ?? null;
   const lockPassed = lockAtIso ? new Date(lockAtIso) <= new Date() : false;
   const allPicksSubmitted = groupsPicked >= totalGroups && championPicked;
+  const predProgress = Math.round(
+    ((groupsPicked + (championPicked ? 1 : 0)) / (totalGroups + 1)) * 100,
+  );
+  const groupsLeft = Math.max(0, totalGroups - groupsPicked);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-4">
-        {validator ? (
-          <ValidatorLogo
-            url={validator.logo_url ?? null}
-            name={validator.name}
-            size={48}
-          />
-        ) : null}
-        <div>
-          <h1 className="text-2xl font-bold">
-            Hello, {state.profile?.username}
-          </h1>
-          {validator ? (
-            <p className="text-sm text-foreground/60">
-              Team: <span className="text-foreground/90">{validator.name}</span>
-              {validator.region ? ` · ${validator.region}` : null}
-            </p>
-          ) : null}
+    <div className="flex flex-col gap-5">
+
+      <div className="relative overflow-hidden bg-white/4 border border-white/10 rounded-2xl px-6 py-5">
+        <div className="absolute inset-0 bg-linear-to-r from-jagpool-primary/8 via-transparent to-transparent pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-8">
+
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            {validator ? (
+              <div className="relative shrink-0">
+                <ValidatorLogo url={validator.logo_url ?? null} name={validator.name} size={52} />
+                <span className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5"><Target size={12} className="text-jagpool-primary" /></span>
+              </div>
+            ) : null}
+            <div className="min-w-0">
+              <h1 className="text-xl font-black truncate">
+                {state.profile?.username}
+              </h1>
+              {validator ? (
+                <p className="text-sm text-foreground/55 flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span>Team:</span>
+                  <span className="text-foreground/80 font-medium">{validator.name}</span>
+                  {validator.region ? <RegionTag region={validator.region} /> : null}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 sm:gap-6">
+            <Kpi label="points" value={String(points)} highlight={points > 0} />
+            <div className="h-8 w-px bg-white/10 shrink-0" />
+            <Kpi
+              label="rank"
+              value={myRank ? `#${myRank}` : "—"}
+              sub={totalRanked > 0 ? `of ${totalRanked}` : undefined}
+            />
+            <div className="h-8 w-px bg-white/10 shrink-0" />
+            <Kpi
+              label="picks"
+              value={`${groupsPicked + Number(championPicked)}/${totalGroups + 1}`}
+              highlight={allPicksSubmitted}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Pre-lock: drive action ("submit your picks"). Post-lock: show next
-          match info — by then the user can't act on group/champion anymore. */}
-      {!lockPassed && lockAtIso ? (
+      {!lockPassed && lockAtIso && !allPicksSubmitted ? (
         <PredictionsCta
           lockAtIso={lockAtIso}
           groupsPicked={groupsPicked}
           totalGroups={totalGroups}
           championPicked={championPicked}
-          allSubmitted={allPicksSubmitted}
+          progress={predProgress}
         />
-      ) : nextMatch ? (
-        <Card>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="text-xs text-foreground/50 uppercase mb-1">
-                Next match
-              </div>
-              <div className="font-medium">
-                <span className="mr-1">{flagFor(nextMatch.home_team ?? "")}</span>
-                {nextMatch.home_team}
-                <span className="mx-2 text-foreground/40">vs</span>
-                <span className="mr-1">{flagFor(nextMatch.away_team ?? "")}</span>
-                {nextMatch.away_team}
-              </div>
-              <div className="text-xs text-foreground/60 mt-1">
-                {formatKickoffBRT(nextMatch.kickoff_at)}
-                {nextMatch.venue ? ` · ${nextMatch.venue}` : null}
-              </div>
-            </div>
-            <Countdown target={nextMatch.kickoff_at} />
-          </div>
-        </Card>
       ) : null}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <h3 className="text-sm text-foreground/60 mb-1">Your points</h3>
-          <p className="text-3xl font-bold">{points}</p>
-        </Card>
-        <Card>
-          <h3 className="text-sm text-foreground/60 mb-1">Group picks</h3>
-          <p className="text-3xl font-bold">
-            {groupsPicked}
-            <span className="text-base text-foreground/40">/{totalGroups}</span>
-          </p>
-        </Card>
-        <Card>
-          <h3 className="text-sm text-foreground/60 mb-1">JagSOL</h3>
-          <p className="text-3xl font-bold">
-            {state.profile?.jagsol_balance ?? "—"}
-          </p>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <Link href="/predictions" className="group no-underline">
+          <div className="relative overflow-hidden rounded-2xl border border-green-500/25 bg-linear-to-br from-green-500/14 via-green-500/5 to-transparent p-5 h-full flex flex-col hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/12 transition-all">
+            <div className="flex items-start justify-between mb-5">
+              <span className="text-2xl">⚽</span>
+              <span className="text-[10px] text-green-400/60 uppercase tracking-widest font-semibold">
+                Predictions
+              </span>
+            </div>
+
+            <div className="flex-1 flex flex-col gap-2.5">
+              <PickRow
+                label="Group picks"
+                value={`${groupsPicked} / ${totalGroups}`}
+                done={groupsPicked >= totalGroups}
+              />
+              <PickRow
+                label="Champion"
+                value={championPicked ? "Locked in ✓" : "Not yet"}
+                done={championPicked}
+              />
+              <div className="mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-linear-to-r from-green-500 to-emerald-400 transition-all"
+                  style={{ width: `${predProgress}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-green-500/15">
+              <span className="text-sm font-semibold text-green-400">
+                {allPicksSubmitted
+                  ? "Review picks"
+                  : groupsLeft > 0
+                    ? `${groupsLeft} group${groupsLeft > 1 ? "s" : ""} left`
+                    : "Pick champion"}
+              </span>
+              <Chevron className="text-green-400" />
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/matches" className="group no-underline">
+          <div className="relative overflow-hidden rounded-2xl border border-sky-500/20 bg-linear-to-br from-sky-500/12 via-sky-500/4 to-transparent p-5 h-full flex flex-col hover:-translate-y-0.5 hover:shadow-lg hover:shadow-sky-500/10 transition-all">
+            <div className="flex items-start justify-between mb-5">
+              <span className="text-2xl">🗓️</span>
+              <span className="text-[10px] text-sky-400/60 uppercase tracking-widest font-semibold">
+                Matches
+              </span>
+            </div>
+
+            <div className="flex-1">
+              {nextMatch ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-[10px] text-foreground/40 uppercase tracking-wider font-medium">
+                    Next match
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{flagFor(nextMatch.home_team ?? "")}</span>
+                    <span className="text-xs text-foreground/30 font-bold">vs</span>
+                    <span className="text-2xl">{flagFor(nextMatch.away_team ?? "")}</span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground/80 leading-tight">
+                    {nextMatch.home_team ?? "TBD"} — {nextMatch.away_team ?? "TBD"}
+                  </p>
+                  <p className="text-xs text-foreground/40">
+                    {formatKickoffBRT(nextMatch.kickoff_at)}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-foreground/55 leading-relaxed">
+                  Full tournament schedule and live results.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-sky-500/15">
+              <span className="text-sm font-semibold text-sky-400">Schedule</span>
+              <Chevron className="text-sky-400" />
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/leaderboard" className="group no-underline">
+          <div className="relative overflow-hidden rounded-2xl border border-jagpool-accent/25 bg-linear-to-br from-jagpool-accent/12 via-jagpool-accent/4 to-transparent p-5 h-full flex flex-col hover:-translate-y-0.5 hover:shadow-lg hover:shadow-jagpool-accent/10 transition-all">
+            <div className="flex items-start justify-between mb-5">
+              <span className="text-2xl">🏆</span>
+              <span className="text-[10px] text-jagpool-accent/60 uppercase tracking-widest font-semibold">
+                Leaderboard
+              </span>
+            </div>
+
+            <div className="flex-1 flex flex-col gap-2">
+              {top3.length === 0 ? (
+                <p className="text-sm text-foreground/45">No scores yet — be the first!</p>
+              ) : (
+                top3.map((u, i) => {
+                  const isMe = u.user_id === state.userId;
+                  return (
+                    <div
+                      key={u.user_id}
+                      className={`flex items-center gap-2 text-xs ${isMe ? "text-jagpool-primary font-semibold" : "text-foreground/60"}`}
+                    >
+                      <span className="w-4 shrink-0 text-[10px] text-foreground/30 tabular-nums">
+                        {i + 1}
+                      </span>
+                      <span className="flex-1 truncate">{u.username}</span>
+                      <span className="tabular-nums text-foreground/40 shrink-0">
+                        {u.total_points} pts
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+              {myRank && myRank > 3 ? (
+                <>
+                  <div className="text-foreground/20 text-[10px] text-center leading-none">
+                    ···
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-jagpool-primary font-semibold">
+                    <span className="w-4 shrink-0 tabular-nums">#{myRank}</span>
+                    <span className="flex-1 truncate">{state.profile?.username}</span>
+                    <span className="tabular-nums shrink-0">{points} pts</span>
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-jagpool-accent/15">
+              <span className="text-sm font-semibold text-jagpool-accent">Rankings</span>
+              <Chevron className="text-jagpool-accent" />
+            </div>
+          </div>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <NavCard
-          href="/predictions"
-          title="Predictions"
-          body="Groups, knockout, champion — all picks in one place"
-        />
-        <NavCard
-          href="/matches"
-          title="Matches"
-          body="Schedule + results"
-        />
-        <NavCard
-          href="/leaderboard"
-          title="Leaderboard & rewards"
-          body="Your rank, top users, payouts"
-        />
-      </div>
+      {state.profile?.jagsol_balance && state.profile.jagsol_balance !== "0" ? (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-jagpool-primary/5 border border-jagpool-primary/20 text-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-jagpool-primary shrink-0">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          <span className="text-foreground/60">JagSOL balance:</span>
+          <span className="font-mono font-medium text-jagpool-primary">
+            {state.profile.jagsol_balance}
+          </span>
+          <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 uppercase font-medium">
+            Verified
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function NavCard({
-  href,
-  title,
-  body,
-}: {
-  href: string;
-  title: string;
-  body: string;
-}) {
+
+function RegionTag({ region }: { region: string }) {
+  const colors: Record<string, string> = {
+    LATAM: "text-region-latam bg-region-latam/10 border-region-latam/20",
+    APAC:  "text-region-apac bg-region-apac/10 border-region-apac/20",
+    ZA:    "text-region-za bg-region-za/10 border-region-za/20",
+  };
   return (
-    <Link href={href} className="no-underline">
-      <Card className="hover:border-jagpool-primary/50 transition cursor-pointer h-full">
-        <h3 className="font-semibold mb-1">{title}</h3>
-        <p className="text-sm text-foreground/70">{body}</p>
-      </Card>
-    </Link>
+    <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded border font-medium ${colors[region] ?? "text-foreground/50 border-white/10"}`}>
+      {region}
+    </span>
   );
 }
+
+function Kpi({
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="text-center">
+      <p className={`text-xl sm:text-2xl font-black tabular-nums leading-none ${highlight ? "text-jagpool-primary" : ""}`}>
+        {value}
+        {sub ? (
+          <span className="text-[10px] sm:text-[11px] font-normal text-foreground/30 ml-1">{sub}</span>
+        ) : null}
+      </p>
+      <p className="text-[9px] sm:text-[10px] text-foreground/40 uppercase tracking-wide mt-1">{label}</p>
+    </div>
+  );
+}
+
+function PickRow({
+  label,
+  value,
+  done,
+}: {
+  label: string;
+  value: string;
+  done: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-xs text-foreground/50">{label}</span>
+      <span className={`text-xs font-medium tabular-nums ${done ? "text-emerald-400" : "text-amber-300"}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function Chevron({ className }: { className?: string }) {
+  return (
+    <svg
+      className={`transition-transform group-hover:translate-x-0.5 ${className ?? "text-foreground/40"}`}
+      width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+    >
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  );
+}
+
 
 function PredictionsCta({
   lockAtIso,
   groupsPicked,
   totalGroups,
   championPicked,
-  allSubmitted,
+  progress,
 }: {
   lockAtIso: string;
   groupsPicked: number;
   totalGroups: number;
   championPicked: boolean;
-  allSubmitted: boolean;
+  progress: number;
 }) {
-  const groupsRemaining = Math.max(0, totalGroups - groupsPicked);
-  // CTA destination — all on one timeline page; the group section auto-opens
-  // when the user lands.
-  const ctaHref = "/predictions#group";
-  const ctaLabel = allSubmitted
-    ? "Review your picks"
-    : groupsRemaining > 0
-      ? `Finish ${groupsRemaining} group ${groupsRemaining === 1 ? "pick" : "picks"}`
-      : "Pick your champion";
+  const groupsLeft = Math.max(0, totalGroups - groupsPicked);
+  const ctaLabel = groupsLeft > 0
+    ? `Finish ${groupsLeft} group ${groupsLeft === 1 ? "pick" : "picks"} →`
+    : "Pick your champion →";
 
   return (
-    <Card className="border-jagpool-primary/40 bg-jagpool-primary/5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-xs text-jagpool-primary uppercase mb-1 font-semibold">
-            {allSubmitted ? "You're all set" : "Submit your picks"}
+    <div className="relative overflow-hidden border border-jagpool-primary/40 bg-jagpool-primary/5 rounded-2xl p-5">
+      <div className="absolute inset-0 bg-linear-to-br from-jagpool-primary/5 to-transparent pointer-events-none" />
+      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="text-xs text-jagpool-primary uppercase font-semibold mb-1">
+            Submit your picks
           </div>
-          <div className="font-medium">
-            {allSubmitted
-              ? "Predictions lock at the deadline below — good luck!"
-              : "Lock in your group + champion picks before the deadline."}
+          <div className="font-semibold mb-2">
+            Lock in your group + champion picks before time runs out.
           </div>
-          <div className="text-xs text-foreground/60 mt-1">
-            Locks {formatKickoffBRT(lockAtIso)} ·{" "}
-            <span className={groupsRemaining > 0 ? "text-amber-300" : ""}>
+          <div className="flex items-center gap-2 text-xs flex-wrap">
+            <span className={groupsLeft > 0 ? "text-amber-300" : "text-emerald-400"}>
               Groups {groupsPicked}/{totalGroups}
-            </span>{" "}
-            ·{" "}
-            <span className={!championPicked ? "text-amber-300" : ""}>
+            </span>
+            <span className="text-white/20">·</span>
+            <span className={!championPicked ? "text-amber-300" : "text-emerald-400"}>
               Champion {championPicked ? "✓" : "—"}
             </span>
+            <span className="text-white/20">·</span>
+            <span className="text-foreground/50">{formatKickoffBRT(lockAtIso)}</span>
+          </div>
+          <div className="mt-3 h-1.5 rounded-full bg-white/10 overflow-hidden w-full max-w-xs">
+            <div
+              className="h-full rounded-full bg-linear-to-r from-jagpool-primary to-jagpool-accent transition-all"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
-        <div className="flex flex-col sm:items-end gap-3">
+        <div className="flex flex-col sm:items-end gap-3 shrink-0">
           <Countdown target={lockAtIso} label="Locked" />
           <Link
-            href={ctaHref}
-            className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-jagpool-primary text-white text-sm font-medium hover:bg-jagpool-primary-hover no-underline"
+            href="/predictions"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-jagpool-primary text-white text-sm font-semibold hover:bg-jagpool-primary-hover no-underline transition-colors shadow-md shadow-jagpool-primary/20"
           >
-            {ctaLabel} →
+            {ctaLabel}
           </Link>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

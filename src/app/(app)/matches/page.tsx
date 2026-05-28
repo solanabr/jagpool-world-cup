@@ -1,30 +1,44 @@
 import { requireOnboardedUser } from "@/lib/user-state";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { formatKickoffBRT } from "@/lib/wc2026/dates";
 import { flagFor } from "@/lib/wc2026/flags";
 import type { Match, MatchStage, MatchStatus } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
-const STAGE_LABELS: Record<MatchStage, string> = {
-  group: "Group stage",
-  round_of_32: "Round of 32",
-  round_of_16: "Round of 16",
-  quarter: "Quarterfinals",
-  semi: "Semifinals",
-  third_place: "Third-place playoff",
-  final: "Final",
+const STAGE_SHORT: Partial<Record<MatchStage, string>> = {
+  round_of_32: "R32",
+  round_of_16: "R16",
+  quarter:     "QF",
+  semi:        "SF",
+  third_place: "3rd",
+  final:       "Final",
 };
 
-const STAGE_ORDER: MatchStage[] = [
-  "group",
-  "round_of_32",
-  "round_of_16",
-  "quarter",
-  "semi",
-  "third_place",
-  "final",
-];
+
+function toBRTDateKey(iso: string): string {
+  const ms = new Date(iso).getTime() - 3 * 60 * 60 * 1000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function formatTime(iso: string): string {
+  const ms = new Date(iso).getTime() - 3 * 60 * 60 * 1000;
+  const d = new Date(ms);
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+}
+
+function parseDateKey(dateKey: string) {
+  const d = new Date(dateKey + "T12:00:00Z");
+  return {
+    day:     d.toLocaleDateString("en-US", { day: "numeric",     timeZone: "UTC" }),
+    month:   d.toLocaleDateString("en-US", { month: "short",     timeZone: "UTC" }),
+    weekday: d.toLocaleDateString("en-US", { weekday: "long",    timeZone: "UTC" }),
+  };
+}
+
+function todayBRT(): string {
+  return toBRTDateKey(new Date().toISOString());
+}
+
 
 export default async function MatchesPage() {
   await requireOnboardedUser();
@@ -36,97 +50,144 @@ export default async function MatchesPage() {
     .order("match_number", { ascending: true });
 
   const matches = (data as Match[]) ?? [];
-  const byStage = {} as Record<MatchStage, Match[]>;
+  const today = todayBRT();
+
+  const byDay = new Map<string, Match[]>();
   for (const m of matches) {
-    byStage[m.stage] ??= [];
-    byStage[m.stage].push(m);
+    const key = toBRTDateKey(m.kickoff_at);
+    if (!byDay.has(key)) byDay.set(key, []);
+    byDay.get(key)!.push(m);
   }
+  const days = [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b));
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold mb-1">All matches</h1>
-        <p className="text-sm text-foreground/60">
-          Full FIFA WC 2026 schedule. Times in Brasília (BRT, UTC-3).
+        <h1 className="text-3xl font-black mb-1">All matches</h1>
+        <p className="text-sm text-foreground/50">
+          {matches.length} matches · Brasília time (BRT, UTC-3)
         </p>
       </div>
 
-      {STAGE_ORDER.map((stage) => {
-        const stageMatches = byStage[stage] ?? [];
-        if (stageMatches.length === 0) return null;
+      {days.map(([dateKey, dayMatches]) => {
+        const { day, month, weekday } = parseDateKey(dateKey);
+        const isToday = dateKey === today;
+        const allDone = dayMatches.every((m) => m.status === "completed");
+        const hasLive = dayMatches.some((m) => m.status === "live");
+
         return (
-          <section key={stage}>
-            <h2 className="text-lg font-semibold mb-3">
-              {STAGE_LABELS[stage]}{" "}
-              <span className="text-sm text-foreground/40 font-normal">
-                ({stageMatches.length})
-              </span>
-            </h2>
-            <ul className="bg-white/5 border border-white/10 rounded-xl divide-y divide-white/5">
-              {stageMatches.map((m) => (
-                <MatchRow key={m.id} match={m} />
-              ))}
-            </ul>
-          </section>
+          <div
+            key={dateKey}
+            className={`rounded-2xl border overflow-hidden transition-opacity ${
+              allDone ? "opacity-60" : ""
+            } ${
+              isToday
+                ? "border-jagpool-primary/40"
+                : hasLive
+                  ? "border-jagpool-primary/25"
+                  : "border-white/10"
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between px-4 py-3 border-b ${
+                isToday
+                  ? "bg-jagpool-primary/8 border-jagpool-primary/20"
+                  : hasLive
+                    ? "bg-jagpool-primary/5 border-jagpool-primary/12"
+                    : "bg-white/4 border-white/8"
+              }`}
+            >
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black leading-none">{day}</span>
+                <span className="text-base font-semibold text-foreground/60">{month}</span>
+                {isToday ? (
+                  <span className="text-[10px] font-bold text-jagpool-primary bg-jagpool-primary/15 border border-jagpool-primary/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                    Today
+                  </span>
+                ) : null}
+                {hasLive ? (
+                  <span className="text-[10px] font-bold text-jagpool-primary uppercase tracking-wide">
+                    ● Live
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-foreground/30">{weekday}</span>
+                <span className="text-xs text-foreground/20 font-mono">
+                  {dayMatches.length} {dayMatches.length === 1 ? "match" : "matches"}
+                </span>
+              </div>
+            </div>
+
+            {dayMatches.map((m, i) => (
+              <MatchRow
+                key={m.id}
+                match={m}
+                last={i === dayMatches.length - 1}
+              />
+            ))}
+          </div>
         );
       })}
     </div>
   );
 }
 
-function MatchRow({ match }: { match: Match }) {
+
+function MatchRow({ match, last }: { match: Match; last: boolean }) {
   const isDone = match.status === "completed";
+  const isLive = match.status === "live";
+
   return (
-    <li className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="text-xs text-foreground/40 font-mono w-9 shrink-0">
-          #{match.match_number}
-        </span>
-        {match.group_name ? (
-          <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-foreground/60 shrink-0">
-            {match.group_name}
-          </span>
-        ) : null}
-        <span className="truncate text-sm">
-          <span className="mr-1">{flagFor(match.home_team ?? "")}</span>
+    <div
+      className={`flex items-center gap-3 px-4 py-2.5 ${
+        last ? "" : "border-b border-white/5"
+      } ${!isDone ? "hover:bg-white/3 transition-colors" : ""}`}
+    >
+      <span
+        className={`text-xs font-mono tabular-nums w-10 shrink-0 ${
+          isDone ? "text-foreground/25" : isLive ? "text-jagpool-primary font-bold" : "text-foreground/45"
+        }`}
+      >
+        {isLive ? "LIVE" : formatTime(match.kickoff_at)}
+      </span>
+
+      <div className="flex-1 flex items-center gap-1.5 min-w-0 text-sm">
+        <span className="leading-none">{flagFor(match.home_team ?? "")}</span>
+        <span className={`font-medium truncate ${isDone ? "text-foreground/45" : "text-foreground/85"}`}>
           {match.home_team ?? "TBD"}
-          {isDone && match.home_score != null ? (
-            <span className="ml-2 font-mono text-foreground">
-              {match.home_score}
-            </span>
-          ) : null}
-          <span className="mx-2 text-foreground/40">vs</span>
-          {isDone && match.away_score != null ? (
-            <span className="mr-2 font-mono text-foreground">
-              {match.away_score}
-            </span>
-          ) : null}
-          <span className="mr-1">{flagFor(match.away_team ?? "")}</span>
+        </span>
+
+        {isDone ? (
+          <span className="mx-1.5 font-black text-white tabular-nums shrink-0">
+            {match.home_score} – {match.away_score}
+          </span>
+        ) : (
+          <span className="mx-1.5 text-foreground/20 text-xs shrink-0">vs</span>
+        )}
+
+        <span className="leading-none">{flagFor(match.away_team ?? "")}</span>
+        <span className={`font-medium truncate ${isDone ? "text-foreground/45" : "text-foreground/85"}`}>
           {match.away_team ?? "TBD"}
         </span>
       </div>
-      <div className="text-xs text-foreground/50 whitespace-nowrap flex items-center gap-2 shrink-0">
-        <StatusBadge status={match.status} />
-        <span>{formatKickoffBRT(match.kickoff_at)}</span>
-        {match.venue ? <span>· {match.venue}</span> : null}
-      </div>
-    </li>
-  );
-}
 
-function StatusBadge({ status }: { status: MatchStatus }) {
-  if (status === "upcoming") return null;
-  const styles: Record<Exclude<MatchStatus, "upcoming">, string> = {
-    live: "bg-jagpool-primary/20 text-jagpool-primary border-jagpool-primary/40",
-    locked: "bg-amber-500/20 text-amber-400 border-amber-500/40",
-    completed: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
-    cancelled: "bg-red-500/20 text-red-400 border-red-500/40",
-  };
-  return (
-    <span
-      className={`text-[10px] uppercase px-1.5 py-0.5 rounded border ${styles[status]}`}
-    >
-      {status === "completed" ? "done" : status}
-    </span>
+      <div className="flex items-center gap-2 shrink-0">
+        {match.venue ? (
+          <span className="hidden lg:block text-xs text-foreground/20 truncate max-w-36">
+            {match.venue}
+          </span>
+        ) : null}
+        {match.group_name ? (
+          <span className="text-[10px] w-5 h-5 rounded-md bg-white/6 border border-white/10 flex items-center justify-center font-bold text-foreground/40">
+            {match.group_name}
+          </span>
+        ) : match.stage !== "group" ? (
+          <span className="text-[10px] font-semibold text-foreground/30 uppercase tracking-wide">
+            {STAGE_SHORT[match.stage]}
+          </span>
+        ) : null}
+      </div>
+    </div>
   );
 }

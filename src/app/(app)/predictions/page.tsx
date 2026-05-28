@@ -1,7 +1,6 @@
 import { requireOnboardedUser } from "@/lib/user-state";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { GroupPredictionForm } from "@/components/predictions/group-prediction-form";
-import { ChampionPicker } from "@/components/predictions/champion-picker";
+import { GroupStageForm } from "@/components/predictions/group-stage-form";
 import { KnockoutMatchForm } from "@/components/predictions/knockout-match-form";
 import { Countdown } from "@/components/predictions/countdown";
 import { WC2026_GROUPS } from "@/lib/wc2026/groups";
@@ -205,19 +204,13 @@ export default async function PredictionsPage() {
           </>
         }
       >
-        <div className="flex flex-col gap-6 px-4 pb-4 pt-2">
-          <GroupPredictionForm
-            tournamentId={tournament.id}
-            groups={WC2026_GROUPS}
-            matchesByGroup={groupMatchesByGroup}
-            initialPredictions={groupPredsByName}
-          />
-          <ChampionPicker
-            tournamentId={tournament.id}
-            initial={championPrediction?.team ?? null}
-            locked={groupsLocked || (championPrediction?.locked ?? false)}
-          />
-        </div>
+        <GroupStageForm
+          tournamentId={tournament.id}
+          groups={WC2026_GROUPS}
+          initialPredictions={groupPredsByName}
+          initialChampion={championPrediction?.team ?? null}
+          locked={groupsLocked}
+        />
       </StageDetails>
 
       {KNOCKOUT_STAGE_ORDER.map((stage) => {

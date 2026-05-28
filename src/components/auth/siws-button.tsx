@@ -41,7 +41,13 @@ function friendlyError(body: VerifyErrorBody | null, status: number): string {
   }
 }
 
-export function SiwsButton({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
+export function SiwsButton({
+  redirectTo = "/dashboard",
+  compact = false,
+}: {
+  redirectTo?: string;
+  compact?: boolean;
+}) {
   const { publicKey, signMessage, connected, connecting, disconnect } = useWallet();
   const { setVisible } = useWalletModal();
   const router = useRouter();
@@ -130,6 +136,9 @@ export function SiwsButton({ redirectTo = "/dashboard" }: { redirectTo?: string 
   }, [connected, setVisible, signIn]);
 
   if (!mounted) {
+    if (compact) {
+      return <div className="h-9 w-32 rounded-lg bg-white/5 animate-pulse" />;
+    }
     return (
       <div className="flex flex-col gap-3 items-center min-h-[80px] justify-center">
         <div className="h-12 w-56 rounded-md bg-white/5 animate-pulse" />
@@ -138,12 +147,25 @@ export function SiwsButton({ redirectTo = "/dashboard" }: { redirectTo?: string 
   }
 
   const label = signing
-    ? "Sign the message in your wallet…"
+    ? "Signing…"
     : connecting
       ? "Connecting…"
       : connected
-        ? "Sign in with Solana"
-        : "Connect Solana wallet";
+        ? compact ? "Sign in" : "Sign in with Solana"
+        : compact ? "Connect wallet" : "Connect Solana wallet";
+
+  if (compact) {
+    return (
+      <div className="flex flex-col items-end gap-1">
+        <Button onClick={handleClick} disabled={signing || connecting} size="md">
+          {label}
+        </Button>
+        {error ? (
+          <p className="text-xs text-red-400 text-right max-w-[200px] leading-tight">{error}</p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3 items-center">

@@ -5,6 +5,7 @@ const PUBLIC_ROUTES = [
   "/",
   "/api/auth/siws",
   "/api/cron",
+  ...(process.env.NODE_ENV === "development" ? ["/api/dev"] : []),
 ];
 
 export async function updateSession(request: NextRequest) {

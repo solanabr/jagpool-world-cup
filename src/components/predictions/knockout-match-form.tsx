@@ -108,16 +108,29 @@ export function KnockoutMatchForm({
         </p>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={winner}
-            onChange={(e) => setWinner(e.target.value as "home" | "away" | "")}
-            disabled={disabled || busy}
-            className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm"
-          >
-            <option value="">winner…</option>
-            <option value="home">{flagFor(match.home_team ?? "")} {match.home_team}</option>
-            <option value="away">{flagFor(match.away_team ?? "")} {match.away_team}</option>
-          </select>
+          {(["home", "away"] as const).map((side) => {
+            const teamName = side === "home" ? (match.home_team ?? "TBD") : (match.away_team ?? "TBD");
+            const isActive = winner === side;
+            const isDisabled = disabled || busy;
+            return (
+              <button
+                key={side}
+                type="button"
+                disabled={isDisabled}
+                onClick={() => setWinner(isActive ? "" : side)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-all ${
+                  isDisabled
+                    ? "opacity-40 cursor-not-allowed bg-white/3 border-white/8 text-foreground/40"
+                    : isActive
+                      ? "bg-jagpool-primary/12 border-jagpool-primary/40 text-jagpool-primary shadow-sm shadow-jagpool-primary/10"
+                      : "bg-white/5 border-white/10 text-foreground/60 hover:border-white/20 hover:text-foreground/90"
+                }`}
+              >
+                <span>{flagFor(teamName)}</span>
+                <span>{teamName}</span>
+              </button>
+            );
+          })}
 
           {isLateStage ? (
             <>

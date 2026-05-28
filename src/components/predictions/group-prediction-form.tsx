@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { flagFor } from "@/lib/wc2026/flags";
-import { formatKickoffBRT } from "@/lib/wc2026/dates";
 import type { GroupPrediction, Match } from "@/types/db";
 
 export type GroupConfig = {
@@ -11,157 +9,156 @@ export type GroupConfig = {
   teams: string[];
 };
 
+const MAX_TOTAL = 32;
+const MAX_PER_GROUP = 3;
+const MAX_THIRD_PLACE_GROUPS = 8;
+
 export function GroupPredictionForm({
-  tournamentId,
   groups,
-  matchesByGroup = {},
   initialPredictions,
+  onPickChange,
 }: {
-  tournamentId: string;
+  tournamentId?: string;
   groups: GroupConfig[];
   matchesByGroup?: Record<string, Match[]>;
   initialPredictions: Record<string, GroupPrediction | undefined>;
+  onPickChange?: (picked: Set<string>) => void;
 }) {
-  const [picks, setPicks] = useState<
-    Record<string, { team1: string; team2: string }>
-  >(
-    Object.fromEntries(
-      groups.map((g) => [
-        g.name,
-        {
-          team1: initialPredictions[g.name]?.advancing_team_1 ?? "",
-          team2: initialPredictions[g.name]?.advancing_team_2 ?? "",
-        },
-      ]),
-    ),
-  );
-  const [saving, setSaving] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const [picked, setPicked] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    for (const g of groups) {
+      const pred = initialPredictions[g.name];
+      if (pred?.advancing_team_1) initial.add(pred.advancing_team_1);
+      if (pred?.advancing_team_2) initial.add(pred.advancing_team_2);
+    }
+    return initial;
+  });
 
-  async function save(groupName: string) {
-    const pick = picks[groupName];
-    if (!pick?.team1 || !pick?.team2 || pick.team1 === pick.team2) {
-      setErrors((e) => ({ ...e, [groupName]: "Pick 2 different teams" }));
-      return;
-    }
-    setSaving(groupName);
-    setErrors((e) => ({ ...e, [groupName]: null }));
-    try {
-      const res = await fetch("/api/predictions/group", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tournamentId,
-          groupName,
-          team1: pick.team1,
-          team2: pick.team2,
-        }),
-      });
-      if (!res.ok) {
-        const errJson = (await res.json().catch(() => null)) as
-          | { error?: string }
-          | null;
-        throw new Error(errJson?.error ?? "Could not save");
-      }
-    } catch (err) {
-      setErrors((e) => ({ ...e, [groupName]: (err as Error).message }));
-    } finally {
-      setSaving(null);
-    }
+  function groupCount(groupTeams: string[], set: Set<string>) {
+    return groupTeams.filter((t) => set.has(t)).length;
   }
 
+  function groupsWithThree(set: Set<string>) {
+    return groups.filter((g) => groupCount(g.teams, set) >= 3).length;
+  }
+
+  function canPick(
+    team: string,
+    groupTeams: string[],
+    set: Set<string>,
+  ): boolean {
+    if (set.has(team)) return true;
+    if (set.size >= MAX_TOTAL) return false;
+    const gc = groupCount(groupTeams, set);
+    if (gc >= MAX_PER_GROUP) return false;
+    if (gc >= 2 && groupsWithThree(set) >= MAX_THIRD_PLACE_GROUPS) return false;
+    return true;
+  }
+
+  function toggle(team: string, groupTeams: string[]) {
+    if (!canPick(team, groupTeams, picked)) return;
+    const next = new Set(picked);
+    next.has(team) ? next.delete(team) : next.add(team);
+    setPicked(next);
+    onPickChange?.(next);
+  }
+
+  const total = picked.size;
+  const done = total === MAX_TOTAL;
+  const thirdSlotsFilled = groupsWithThree(picked);
+  const thirdSlotsLeft = MAX_THIRD_PLACE_GROUPS - thirdSlotsFilled;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {groups.map((group) => {
-        const pick = picks[group.name];
-        const locked = initialPredictions[group.name]?.locked;
-        const matches = matchesByGroup?.[group.name] ?? [];
-
-        return (
-          <div
-            key={group.name}
-            className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col gap-3"
-          >
-            <h3 className="font-semibold">Group {group.name}</h3>
-
-            <ul className="text-sm divide-y divide-white/5 border border-white/10 rounded-md overflow-hidden bg-white/[0.02]">
-              {matches.map((m) => (
-                <li
-                  key={m.id}
-                  className="flex items-center justify-between px-3 py-2 gap-2"
-                >
-                  <span className="truncate">
-                    <span className="mr-1">{flagFor(m.home_team ?? "")}</span>
-                    {m.home_team}
-                    <span className="text-foreground/40 mx-2">vs</span>
-                    <span className="mr-1">{flagFor(m.away_team ?? "")}</span>
-                    {m.away_team}
-                  </span>
-                  <span className="text-xs text-foreground/50 whitespace-nowrap">
-                    {formatKickoffBRT(m.kickoff_at)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="flex flex-col gap-2">
-              <select
-                disabled={locked}
-                value={pick.team1}
-                onChange={(e) =>
-                  setPicks((p) => ({
-                    ...p,
-                    [group.name]: { ...p[group.name], team1: e.target.value },
-                  }))
-                }
-                className="bg-white/5 border border-white/10 rounded px-2 py-1.5"
-              >
-                <option value="">1st place…</option>
-                {group.teams.map((t) => (
-                  <option key={t} value={t}>
-                    {flagFor(t)} {t}
-                  </option>
-                ))}
-              </select>
-              <select
-                disabled={locked}
-                value={pick.team2}
-                onChange={(e) =>
-                  setPicks((p) => ({
-                    ...p,
-                    [group.name]: { ...p[group.name], team2: e.target.value },
-                  }))
-                }
-                className="bg-white/5 border border-white/10 rounded px-2 py-1.5"
-              >
-                <option value="">2nd place…</option>
-                {group.teams.map((t) => (
-                  <option key={t} value={t}>
-                    {flagFor(t)} {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {errors[group.name] ? (
-              <p className="text-xs text-red-400">{errors[group.name]}</p>
-            ) : null}
-
-            <Button
-              onClick={() => save(group.name)}
-              disabled={!!saving || locked}
-              size="sm"
-              variant="secondary"
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm text-foreground/50">
+          Pick 32 advancing teams — up to 3 from 8 groups
+        </p>
+        <div className="flex items-center gap-4 w-full justify-between">
+          <span className="text-xs text-foreground/35">
+            3rd-place slots:{" "}
+            <span
+              className={
+                thirdSlotsLeft === 0
+                  ? "text-jagpool-accent font-semibold"
+                  : "text-foreground/50"
+              }
             >
-              {locked
-                ? "Locked"
-                : saving === group.name
-                  ? "Saving…"
-                  : "Save group"}
-            </Button>
-          </div>
-        );
-      })}
+              {thirdSlotsFilled}/{MAX_THIRD_PLACE_GROUPS}
+            </span>
+          </span>
+          <span
+            className={`text-sm font-bold tabular-nums ${done ? "text-jagpool-primary" : "text-foreground/50"}`}
+          >
+            {total}/{MAX_TOTAL}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {groups.map((group) => {
+          const gc = groupCount(group.teams, picked);
+          const hasThird = gc >= 3;
+          const isGroupFull = gc >= MAX_PER_GROUP;
+          const noMoreThirds =
+            !hasThird && gc >= 2 && thirdSlotsFilled >= MAX_THIRD_PLACE_GROUPS;
+          const groupMax = hasThird || thirdSlotsLeft > 0 ? MAX_PER_GROUP : 2;
+
+          return (
+            <div key={group.name} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between px-0.5">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-foreground/40">
+                  Group {group.name}
+                </span>
+                <span
+                  className={`text-[11px] font-semibold tabular-nums ${
+                    gc === 0
+                      ? "text-foreground/20"
+                      : hasThird
+                        ? "text-jagpool-accent"
+                        : gc === 2
+                          ? "text-jagpool-primary"
+                          : "text-foreground/40"
+                  }`}
+                >
+                  {gc}/{groupMax}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                {group.teams.map((team) => {
+                  const isPicked = picked.has(team);
+                  const isBlocked =
+                    !isPicked &&
+                    (isGroupFull || total >= MAX_TOTAL || noMoreThirds);
+
+                  return (
+                    <button
+                      key={team}
+                      onClick={() => toggle(team, group.teams)}
+                      disabled={isBlocked}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left w-full transition-all ${
+                        isPicked &&
+                        hasThird &&
+                        group.teams.filter((t) => picked.has(t)).at(-1) === team
+                          ? "bg-jagpool-accent/12 border border-jagpool-accent/25 text-white font-semibold"
+                          : isPicked
+                            ? "bg-jagpool-primary/15 border border-jagpool-primary/30 text-white font-semibold"
+                            : isBlocked
+                              ? "bg-white/3 border border-white/6 text-foreground/20 cursor-not-allowed"
+                              : "bg-white/5 border border-white/8 text-foreground/60 hover:bg-white/8 hover:text-white cursor-pointer"
+                      }`}
+                    >
+                      <span className="shrink-0">{flagFor(team)}</span>
+                      <span className="truncate">{team}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
