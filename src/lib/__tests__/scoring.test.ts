@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  scoreAdvancerPrediction,
   scoreChampionPrediction,
-  scoreGroupPrediction,
   scoreMatchPrediction,
 } from "@/lib/scoring/compute";
 import { POINTS, REASONS } from "@/lib/scoring/rules";
-import type { GroupPrediction, Match, MatchPrediction } from "@/types/db";
+import type { Match, MatchPrediction } from "@/types/db";
 
 function makeMatch(over: Partial<Match> = {}): Match {
   return {
@@ -52,7 +52,7 @@ describe("POINTS — regression pin", () => {
   // passing because every other assertion uses POINTS.X symbolically.
   it("matches the documented scoring rules", () => {
     expect(POINTS).toEqual({
-      GROUP_ADVANCER_HIT: 5,
+      ADVANCER_HIT: 5,
       KNOCKOUT_WINNER_HIT: 10,
       LATE_STAGE_WINNER_SCORE_HIT: 5,
       LATE_STAGE_LOSER_SCORE_HIT: 5,
@@ -74,7 +74,7 @@ describe("scoreMatchPrediction — knockout rules", () => {
     ).toEqual([]);
   });
 
-  it("returns empty for group-stage matches (group stage scores via group_predictions)", () => {
+  it("returns empty for group-stage matches (group stage scores via advancers)", () => {
     expect(
       scoreMatchPrediction(makeMatchPred(), makeMatch({ stage: "group" })),
     ).toEqual([]);
@@ -220,54 +220,56 @@ describe("scoreMatchPrediction — late-stage score bonuses (semi, third, final)
   });
 });
 
-describe("scoreGroupPrediction", () => {
-  const basePred: GroupPrediction = {
-    id: "g1",
-    user_id: "u1",
-    tournament_id: "t1",
-    group_name: "C",
-    advancing_team_1: "Brazil",
-    advancing_team_2: "Morocco",
-    locked: true,
-    submitted_at: "",
-    updated_at: "",
-  };
+describe("scoreAdvancerPrediction (WC 2026 32-advancer model)", () => {
+  const official = new Set(["Brazil", "Morocco", "Argentina", "France", "Spain"]);
 
-  it("awards 10 pts (2 hits × 5) when both teams correct, no bonus", () => {
-    const events = scoreGroupPrediction(basePred, {
-      team1: "Brazil",
-      team2: "Morocco",
-    });
+  it("awards 5 pts per predicted team that's in the official set", () => {
+    const events = scoreAdvancerPrediction(
+      "u1",
+      ["Brazil", "Argentina", "Mexico"], // 2 of 3 correct
+      official,
+    );
     expect(events).toHaveLength(1);
-    expect(events[0].points).toBe(2 * POINTS.GROUP_ADVANCER_HIT);
-    expect(events[0].reason).toBe(REASONS.GROUP_ADVANCER);
+    expect(events[0].reason).toBe(REASONS.ADVANCER);
+    expect(events[0].points).toBe(2 * POINTS.ADVANCER_HIT);
   });
 
-  it("awards 5 pts when one team correct", () => {
-    const events = scoreGroupPrediction(basePred, {
-      team1: "Brazil",
-      team2: "Scotland",
-    });
-    expect(events[0].points).toBe(POINTS.GROUP_ADVANCER_HIT);
+  it("aggregates all hits into a single event", () => {
+    const events = scoreAdvancerPrediction(
+      "u1",
+      ["Brazil", "Morocco", "Argentina", "France"], // all 4 correct
+      official,
+    );
+    expect(events).toHaveLength(1);
+    expect(events[0].points).toBe(4 * POINTS.ADVANCER_HIT);
   });
 
-  it("returns empty when no teams correct", () => {
+  it("returns empty when no predicted team advanced", () => {
     expect(
-      scoreGroupPrediction(basePred, { team1: "Haiti", team2: "Scotland" }),
+      scoreAdvancerPrediction("u1", ["Haiti", "Scotland"], official),
     ).toEqual([]);
   });
 
-  it("caps hits at unique teams (defensive against duplicates)", () => {
-    const dupePred = {
-      ...basePred,
-      advancing_team_1: "Brazil",
-      advancing_team_2: "Brazil",
-    };
-    const events = scoreGroupPrediction(dupePred, {
-      team1: "Brazil",
-      team2: "Morocco",
-    });
-    expect(events[0].points).toBe(POINTS.GROUP_ADVANCER_HIT);
+  it("returns empty for an empty prediction (partial save with 0 picks)", () => {
+    expect(scoreAdvancerPrediction("u1", [], official)).toEqual([]);
+  });
+
+  it("dedupes repeated teams so a duplicate can't double-count", () => {
+    const events = scoreAdvancerPrediction(
+      "u1",
+      ["Brazil", "Brazil", "France"],
+      official,
+    );
+    expect(events[0].points).toBe(2 * POINTS.ADVANCER_HIT);
+  });
+
+  it("scales to a realistic partial pick (e.g. 20 of 32 right)", () => {
+    const officialBig = new Set(
+      Array.from({ length: 32 }, (_, i) => `T${i}`),
+    );
+    const predicted = Array.from({ length: 25 }, (_, i) => `T${i}`); // 25 picks, T0..T24 — 25 hits (all in official)
+    const events = scoreAdvancerPrediction("u1", predicted, officialBig);
+    expect(events[0].points).toBe(25 * POINTS.ADVANCER_HIT);
   });
 });
 

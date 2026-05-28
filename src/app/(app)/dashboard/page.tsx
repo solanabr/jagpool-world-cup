@@ -6,7 +6,6 @@ import { ValidatorLogo } from "@/components/ui/validator-logo";
 import { Countdown } from "@/components/predictions/countdown";
 import { formatKickoffBRT } from "@/lib/wc2026/dates";
 import { flagFor } from "@/lib/wc2026/flags";
-import { WC2026_GROUPS } from "@/lib/wc2026/groups";
 import type { Match, Tournament } from "@/types/db";
 import type { UserLeaderboardRow } from "@/types/db";
 
@@ -36,7 +35,7 @@ export default async function DashboardPage() {
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     supabase
-      .from("group_predictions")
+      .from("advancer_predictions")
       .select("id", { count: "exact", head: true })
       .eq("user_id", state.userId),
     supabase
@@ -62,19 +61,19 @@ export default async function DashboardPage() {
   const top3 = allUsers.slice(0, 3);
 
   const validator = validatorRes.data;
-  const groupsPicked = predsCountRes.count ?? 0;
+  const advancersPicked = predsCountRes.count ?? 0;
   const championPicked = !!(championRes.data as { team: string } | null);
   const nextMatch = nextMatchRes.data as Match | null;
   const tournament = tournamentRes.data as Tournament | null;
-  const totalGroups = WC2026_GROUPS.length;
+  const totalAdvancers = 32;
 
   const lockAtIso = tournament?.group_lock_at ?? nextMatch?.kickoff_at ?? null;
   const lockPassed = lockAtIso ? new Date(lockAtIso) <= new Date() : false;
-  const allPicksSubmitted = groupsPicked >= totalGroups && championPicked;
+  const allPicksSubmitted = advancersPicked >= totalAdvancers && championPicked;
   const predProgress = Math.round(
-    ((groupsPicked + (championPicked ? 1 : 0)) / (totalGroups + 1)) * 100,
+    ((advancersPicked + (championPicked ? 1 : 0)) / (totalAdvancers + 1)) * 100,
   );
-  const groupsLeft = Math.max(0, totalGroups - groupsPicked);
+  const advancersLeft = Math.max(0, totalAdvancers - advancersPicked);
 
   return (
     <div className="flex flex-col gap-5">
@@ -115,7 +114,7 @@ export default async function DashboardPage() {
             <div className="h-8 w-px bg-white/10 shrink-0" />
             <Kpi
               label="picks"
-              value={`${groupsPicked + Number(championPicked)}/${totalGroups + 1}`}
+              value={`${advancersPicked + Number(championPicked)}/${totalAdvancers + 1}`}
               highlight={allPicksSubmitted}
             />
           </div>
@@ -125,8 +124,8 @@ export default async function DashboardPage() {
       {!lockPassed && lockAtIso && !allPicksSubmitted ? (
         <PredictionsCta
           lockAtIso={lockAtIso}
-          groupsPicked={groupsPicked}
-          totalGroups={totalGroups}
+          advancersPicked={advancersPicked}
+          totalAdvancers={totalAdvancers}
           championPicked={championPicked}
           progress={predProgress}
         />
@@ -145,9 +144,9 @@ export default async function DashboardPage() {
 
             <div className="flex-1 flex flex-col gap-2.5">
               <PickRow
-                label="Group picks"
-                value={`${groupsPicked} / ${totalGroups}`}
-                done={groupsPicked >= totalGroups}
+                label="Advancers"
+                value={`${advancersPicked} / ${totalAdvancers}`}
+                done={advancersPicked >= totalAdvancers}
               />
               <PickRow
                 label="Champion"
@@ -166,8 +165,8 @@ export default async function DashboardPage() {
               <span className="text-sm font-semibold text-green-400">
                 {allPicksSubmitted
                   ? "Review picks"
-                  : groupsLeft > 0
-                    ? `${groupsLeft} group${groupsLeft > 1 ? "s" : ""} left`
+                  : advancersLeft > 0
+                    ? `${advancersLeft} advancer${advancersLeft > 1 ? "s" : ""} left`
                     : "Pick champion"}
               </span>
               <Chevron className="text-green-400" />
@@ -359,20 +358,20 @@ function Chevron({ className }: { className?: string }) {
 
 function PredictionsCta({
   lockAtIso,
-  groupsPicked,
-  totalGroups,
+  advancersPicked,
+  totalAdvancers,
   championPicked,
   progress,
 }: {
   lockAtIso: string;
-  groupsPicked: number;
-  totalGroups: number;
+  advancersPicked: number;
+  totalAdvancers: number;
   championPicked: boolean;
   progress: number;
 }) {
-  const groupsLeft = Math.max(0, totalGroups - groupsPicked);
-  const ctaLabel = groupsLeft > 0
-    ? `Finish ${groupsLeft} group ${groupsLeft === 1 ? "pick" : "picks"} →`
+  const advancersLeft = Math.max(0, totalAdvancers - advancersPicked);
+  const ctaLabel = advancersLeft > 0
+    ? `Finish ${advancersLeft} more advancer${advancersLeft === 1 ? "" : "s"} →`
     : "Pick your champion →";
 
   return (
@@ -387,8 +386,8 @@ function PredictionsCta({
             Lock in your group + champion picks before time runs out.
           </div>
           <div className="flex items-center gap-2 text-xs flex-wrap">
-            <span className={groupsLeft > 0 ? "text-amber-300" : "text-emerald-400"}>
-              Groups {groupsPicked}/{totalGroups}
+            <span className={advancersLeft > 0 ? "text-amber-300" : "text-emerald-400"}>
+              Advancers {advancersPicked}/{totalAdvancers}
             </span>
             <span className="text-white/20">·</span>
             <span className={!championPicked ? "text-amber-300" : "text-emerald-400"}>

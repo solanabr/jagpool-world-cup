@@ -1,20 +1,12 @@
-import type {
-  GroupPrediction,
-  Match,
-  MatchPrediction,
-  MatchWinner,
-} from "@/types/db";
+import type { Match, MatchPrediction, MatchWinner } from "@/types/db";
 import { POINTS, REASONS, isKnockout, isLateStage } from "./rules";
 
-// Discriminated union — each variant carries ONLY the FKs it needs. This
-// makes invalid states unrepresentable (e.g. you cannot construct a champion
-// event that also has a matchId). Persist.ts has a single flattener that
-// maps each variant to the wide `scores` row shape.
+// Discriminated union — each variant carries ONLY the FKs it needs, so a
+// flattener in persist.ts maps each to the wide `scores` row shape.
 export type ScoreEvent =
   | {
-      reason: typeof REASONS.GROUP_ADVANCER;
+      reason: typeof REASONS.ADVANCER;
       userId: string;
-      groupPredictionId: string;
       points: number;
     }
   | {
@@ -30,13 +22,12 @@ export type ScoreEvent =
   | {
       reason: typeof REASONS.CHAMPION;
       userId: string;
-      championPredictionUserId: string;
       points: number;
     };
 
 /**
  * Score a knockout-stage match prediction (group-stage matches don't score
- * per-match in the JagPool rules — they score via group_predictions instead).
+ * per-match in the JagPool rules — they score via advancer predictions instead).
  *
  * Returns events for:
  *   - knockout_winner: prediction.winner === match.winner
@@ -106,33 +97,27 @@ export function scoreMatchPrediction(
   return events;
 }
 
-/**
- * Score a group advancement prediction against the realized advancers.
- * 5 pts per correct team. No "both correct" bonus (per the JagPool rules).
- */
-export function scoreGroupPrediction(
-  prediction: GroupPrediction,
-  actualAdvancing: { team1: string; team2: string },
+/** 5 pts per predicted team that's in the official advancer set. */
+export function scoreAdvancerPrediction(
+  userId: string,
+  predictedTeams: string[],
+  officialTeams: ReadonlySet<string>,
 ): ScoreEvent[] {
-  const actualSet = new Set([actualAdvancing.team1, actualAdvancing.team2]);
-  const predictedSet = new Set([
-    prediction.advancing_team_1,
-    prediction.advancing_team_2,
-  ]);
-
+  const seen = new Set<string>();
   let hits = 0;
-  for (const team of predictedSet) {
-    if (actualSet.has(team)) hits++;
+  for (const team of predictedTeams) {
+    if (seen.has(team)) continue;
+    seen.add(team);
+    if (officialTeams.has(team)) hits++;
   }
 
   if (hits === 0) return [];
 
   return [
     {
-      reason: REASONS.GROUP_ADVANCER,
-      userId: prediction.user_id,
-      groupPredictionId: prediction.id,
-      points: hits * POINTS.GROUP_ADVANCER_HIT,
+      reason: REASONS.ADVANCER,
+      userId,
+      points: hits * POINTS.ADVANCER_HIT,
     },
   ];
 }
@@ -156,7 +141,6 @@ export function scoreChampionPrediction(
     {
       reason: REASONS.CHAMPION,
       userId: prediction.user_id,
-      championPredictionUserId: prediction.user_id,
       points: POINTS.CHAMPION_HIT,
     },
   ];

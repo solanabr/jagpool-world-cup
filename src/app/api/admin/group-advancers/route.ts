@@ -5,7 +5,9 @@ import {
 } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
 import { isValidUuid } from "@/lib/security";
-import { scoreGroupAndPersist } from "@/lib/scoring/persist";
+import { scoreAdvancersAndPersist } from "@/lib/scoring/persist";
+
+type Advancer = { groupName?: string; teamName?: string };
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin();
@@ -13,12 +15,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: auth.reason }, { status: 403 });
   }
 
-  let body: {
-    tournamentId?: string;
-    groupName?: string;
-    firstPlace?: string;
-    secondPlace?: string;
-  } | null;
+  let body: { tournamentId?: string; advancers?: Advancer[] } | null;
   try {
     body = (await request.json()) as typeof body;
   } catch (err) {
@@ -29,21 +26,22 @@ export async function POST(request: NextRequest) {
   if (
     !body?.tournamentId ||
     !isValidUuid(body.tournamentId) ||
-    !body.groupName ||
-    !/^[A-L]$/.test(body.groupName) ||
-    !body.firstPlace ||
-    !body.secondPlace ||
-    body.firstPlace === body.secondPlace
+    !Array.isArray(body.advancers)
   ) {
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
   }
 
+  const advancers = body.advancers
+    .filter(
+      (a): a is Required<Advancer> =>
+        typeof a?.groupName === "string" && typeof a?.teamName === "string",
+    )
+    .map((a) => ({ groupName: a.groupName, teamName: a.teamName }));
+
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.rpc("set_group_advancers", {
+  const { data, error } = await supabase.rpc("set_tournament_advancers", {
     p_tournament_id: body.tournamentId,
-    p_group_name: body.groupName,
-    p_first_place: body.firstPlace,
-    p_second_place: body.secondPlace,
+    p_advancers: advancers,
   });
 
   if (error) {
@@ -53,34 +51,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Auto-score group predictions now that the truth is recorded.
-  // Service-role client because `scores` writes must bypass user RLS.
   const service = await createServiceRoleClient();
-  const scoring = await scoreGroupAndPersist(
-    service,
-    body.tournamentId,
-    body.groupName,
-    { team1: body.firstPlace, team2: body.secondPlace },
-  );
+  const scoring = await scoreAdvancersAndPersist(service, body.tournamentId);
 
   if (scoring.error) {
     console.error(
-      "[admin/group-advancers] group_result saved but scoring failed",
+      "[admin/group-advancers] advancers saved but scoring failed",
       scoring.error,
     );
     return NextResponse.json(
       {
-        groupResult: data,
+        advancersSet: data,
         scoring: { eventsWritten: 0, error: scoring.error },
         warning:
-          "group result saved, but scoring failed — run rescore from admin UI",
+          "advancers saved, but scoring failed — re-save to retry scoring",
       },
       { status: 207 },
     );
   }
 
   return NextResponse.json({
-    groupResult: data,
+    advancersSet: data,
     scoring: { eventsWritten: scoring.eventsWritten, error: null },
   });
 }

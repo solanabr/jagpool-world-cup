@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,12 @@ export default async function AdminPage() {
   const auth = await requireAdmin();
   if (!auth.ok) redirect("/dashboard");
 
-  const supabase = await createServerSupabaseClient();
+  // Service-role client (RLS-bypass) is safe here: requireAdmin() above has
+  // already proven the caller is an admin, and this is a server component so
+  // the service key never reaches the browser. The user-scoped client would
+  // count only the admin's own `users` row — `users_self_select` RLS is
+  // self-only — making the Users / New-users stats always read 1.
+  const supabase = await createServiceRoleClient();
   const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
 
   const [
@@ -47,8 +52,8 @@ export default async function AdminPage() {
       .select("id", { count: "exact", head: true })
       .gte("created_at", dayAgo),
     supabase
-      .from("group_results")
-      .select("group_name", { count: "exact", head: true }),
+      .from("tournament_advancers")
+      .select("team_name", { count: "exact", head: true }),
   ]);
 
   return (
@@ -78,8 +83,8 @@ export default async function AdminPage() {
             highlight={!!pendingScoringRes.count}
           />
           <Stat
-            label="Groups finalized"
-            value={finalizedGroupsRes.count ?? 0}
+            label="Advancers set"
+            value={`${finalizedGroupsRes.count ?? 0}/32`}
           />
         </div>
       </div>
@@ -88,14 +93,9 @@ export default async function AdminPage() {
         <h2 className="text-sm text-foreground/60 uppercase mb-3">Admin tools</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <AdminLink
-            href="/admin/matches"
-            title="Match results"
-            body="Finalize matches with score + winner. Rescore on correction."
-          />
-          <AdminLink
-            href="/admin/groups"
-            title="Group advancers"
-            body="Record who actually advanced from each group. Auto-scores predictions."
+            href="/admin/results"
+            title="Results"
+            body="Mark group advancers + finalize knockout matches. Winners advance automatically; scoring runs on save."
           />
           <AdminLink
             href="/admin/users"
@@ -119,7 +119,7 @@ function Stat({
   highlight,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   highlight?: boolean;
 }) {
   return (

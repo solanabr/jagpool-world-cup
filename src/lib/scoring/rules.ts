@@ -18,7 +18,7 @@ import type { MatchStage } from "@/types/db";
  *   - Correct tournament champion: +30 pts
  */
 export const POINTS = {
-  GROUP_ADVANCER_HIT: 5,
+  ADVANCER_HIT: 5,
   KNOCKOUT_WINNER_HIT: 10,
   LATE_STAGE_WINNER_SCORE_HIT: 5,
   LATE_STAGE_LOSER_SCORE_HIT: 5,
@@ -26,7 +26,7 @@ export const POINTS = {
 } as const;
 
 export const REASONS = {
-  GROUP_ADVANCER: "group_advancer",
+  ADVANCER: "advancer",
   KNOCKOUT_WINNER: "knockout_winner",
   LATE_STAGE_WINNER_SCORE: "late_stage_winner_score",
   LATE_STAGE_LOSER_SCORE: "late_stage_loser_score",

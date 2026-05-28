@@ -7,7 +7,6 @@ import { WC2026_GROUPS } from "@/lib/wc2026/groups";
 import { isMatchReadyForPrediction } from "@/lib/wc2026/knockout";
 import type {
   ChampionPrediction,
-  GroupPrediction,
   Match,
   MatchPrediction,
   MatchStage,
@@ -58,11 +57,11 @@ export default async function PredictionsPage() {
     );
   }
 
-  const [groupPredsRes, matchPredsRes, championRes, matchesRes] =
+  const [advancerPredsRes, matchPredsRes, championRes, matchesRes] =
     await Promise.all([
       supabase
-        .from("group_predictions")
-        .select("*")
+        .from("advancer_predictions")
+        .select("team_name")
         .eq("user_id", state.userId)
         .eq("tournament_id", tournament.id),
       supabase
@@ -81,18 +80,17 @@ export default async function PredictionsPage() {
         .eq("tournament_id", tournament.id)
         .order("match_number", { ascending: true }),
     ]);
-  if (groupPredsRes.error) console.error("[predictions] group preds fetch failed", groupPredsRes.error);
+  if (advancerPredsRes.error) console.error("[predictions] advancer preds fetch failed", advancerPredsRes.error);
   if (matchPredsRes.error) console.error("[predictions] match preds fetch failed", matchPredsRes.error);
   if (championRes.error) console.error("[predictions] champion fetch failed", championRes.error);
   if (matchesRes.error) console.error("[predictions] matches fetch failed", matchesRes.error);
 
-  const groupPredictions = (groupPredsRes.data as GroupPrediction[]) ?? [];
+  const advancerPicks = (
+    (advancerPredsRes.data as { team_name: string }[]) ?? []
+  ).map((r) => r.team_name);
   const matchPredictions = (matchPredsRes.data as MatchPrediction[]) ?? [];
   const championPrediction = championRes.data as ChampionPrediction | null;
   const matches = (matchesRes.data as Match[]) ?? [];
-
-  const groupPredsByName: Record<string, GroupPrediction | undefined> = {};
-  for (const p of groupPredictions) groupPredsByName[p.group_name] = p;
 
   const matchPredsByMatchId = new Map<string, MatchPrediction>();
   for (const p of matchPredictions) matchPredsByMatchId.set(p.match_id, p);
@@ -115,7 +113,7 @@ export default async function PredictionsPage() {
     ? new Date(tournament.group_lock_at).getTime()
     : null;
   const groupsLocked = groupLockAt !== null && groupLockAt <= now;
-  const groupsCompleted = groupPredictions.length >= WC2026_GROUPS.length;
+  const advancersCompleted = advancerPicks.length >= 32;
   const championPicked = !!championPrediction;
   const groupStatus: StageStatus = groupsLocked ? "locked" : "active";
 
@@ -147,7 +145,7 @@ export default async function PredictionsPage() {
   // Groups first if not yet locked AND not complete. Otherwise first active
   // knockout stage. If nothing is active, leave everything collapsed.
   const groupsNeedsAction =
-    groupStatus === "active" && (!groupsCompleted || !championPicked);
+    groupStatus === "active" && (!advancersCompleted || !championPicked);
   let autoOpenStage: MatchStage | "group" | null = null;
   if (groupsNeedsAction) {
     autoOpenStage = "group";
@@ -189,8 +187,8 @@ export default async function PredictionsPage() {
         summary={
           <>
             <ProgressChip
-              label={`Groups ${groupPredictions.length}/${WC2026_GROUPS.length}`}
-              done={groupsCompleted}
+              label={`Advancers ${advancerPicks.length}/32`}
+              done={advancersCompleted}
             />
             <ProgressChip
               label={`Champion ${championPicked ? "✓" : "—"}`}
@@ -207,7 +205,7 @@ export default async function PredictionsPage() {
         <GroupStageForm
           tournamentId={tournament.id}
           groups={WC2026_GROUPS}
-          initialPredictions={groupPredsByName}
+          initialPicks={advancerPicks}
           initialChampion={championPrediction?.team ?? null}
           locked={groupsLocked}
         />

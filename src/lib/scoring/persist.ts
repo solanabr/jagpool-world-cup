@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  scoreGroupPrediction,
   scoreChampionPrediction,
   scoreMatchPrediction,
+  scoreAdvancerPrediction,
   type ScoreEvent,
 } from "./compute";
 import { REASONS } from "./rules";
@@ -24,17 +24,6 @@ type ScoreRow = {
 
 function toScoreRow(e: ScoreEvent, tournamentId: string): ScoreRow {
   switch (e.reason) {
-    case REASONS.GROUP_ADVANCER:
-      return {
-        user_id: e.userId,
-        tournament_id: tournamentId,
-        match_id: null,
-        group_prediction_id: e.groupPredictionId,
-        match_prediction_id: null,
-        champion_prediction_user_id: null,
-        points: e.points,
-        reason: e.reason,
-      };
     case REASONS.KNOCKOUT_WINNER:
     case REASONS.LATE_STAGE_WINNER_SCORE:
     case REASONS.LATE_STAGE_LOSER_SCORE:
@@ -55,7 +44,18 @@ function toScoreRow(e: ScoreEvent, tournamentId: string): ScoreRow {
         match_id: null,
         group_prediction_id: null,
         match_prediction_id: null,
-        champion_prediction_user_id: e.championPredictionUserId,
+        champion_prediction_user_id: e.userId,
+        points: e.points,
+        reason: e.reason,
+      };
+    case REASONS.ADVANCER:
+      return {
+        user_id: e.userId,
+        tournament_id: tournamentId,
+        match_id: null,
+        group_prediction_id: null,
+        match_prediction_id: null,
+        champion_prediction_user_id: null,
         points: e.points,
         reason: e.reason,
       };
@@ -144,86 +144,8 @@ export async function scoreMatchAndPersist(
 }
 
 /**
- * Score all group predictions for a given (tournament, group) against the
- * provided actual advancers. Delete-then-insert so admin corrections drop
- * stale points for users who used to score but no longer do.
- */
-export async function scoreGroupAndPersist(
-  supabase: SupabaseClient,
-  tournamentId: string,
-  groupName: string,
-  actualAdvancing: { team1: string; team2: string },
-): Promise<{ eventsWritten: number; error?: string }> {
-  const { data, error: fetchError } = await supabase.rpc(
-    "get_group_predictions_for_scoring",
-    { p_tournament_id: tournamentId, p_group_name: groupName },
-  );
-  if (fetchError) {
-    console.error("[scoreGroupAndPersist] fetch RPC failed", fetchError);
-    return { eventsWritten: 0, error: `fetch: ${fetchError.message}` };
-  }
-  if (!data) {
-    console.warn(
-      "[scoreGroupAndPersist] RPC returned null data without error",
-      { tournamentId, groupName },
-    );
-  }
-  const predictions = (data ?? []) as {
-    id: string;
-    user_id: string;
-    advancing_team_1: string;
-    advancing_team_2: string;
-  }[];
-
-  const allEvents: ScoreEvent[] = [];
-  for (const p of predictions) {
-    const events = scoreGroupPrediction(
-      {
-        id: p.id,
-        user_id: p.user_id,
-        tournament_id: tournamentId,
-        group_name: groupName,
-        advancing_team_1: p.advancing_team_1,
-        advancing_team_2: p.advancing_team_2,
-        locked: true,
-        submitted_at: "",
-        updated_at: "",
-      },
-      actualAdvancing,
-    );
-    allEvents.push(...events);
-  }
-
-  // Drop stale rows for predictions that previously scored but no longer do
-  // (admin correcting wrong advancers). Then insert the current set.
-  const predictionIds = predictions.map((p) => p.id);
-  if (predictionIds.length > 0) {
-    const { error: deleteError } = await supabase
-      .from("scores")
-      .delete()
-      .eq("reason", REASONS.GROUP_ADVANCER)
-      .in("group_prediction_id", predictionIds);
-    if (deleteError) {
-      console.error("[scoreGroupAndPersist] stale delete failed", deleteError);
-      return { eventsWritten: 0, error: `delete: ${deleteError.message}` };
-    }
-  }
-
-  if (allEvents.length === 0) return { eventsWritten: 0 };
-
-  const { error: insertError } = await supabase
-    .from("scores")
-    .insert(allEvents.map((e) => toScoreRow(e, tournamentId)));
-
-  if (insertError) {
-    return { eventsWritten: 0, error: `insert: ${insertError.message}` };
-  }
-  return { eventsWritten: allEvents.length };
-}
-
-/**
  * Score everyone's champion picks against the actual tournament champion.
- * Same delete-then-insert pattern for admin-correction safety.
+ * Atomic replace (delete+insert in one RPC) so a correction re-scores cleanly.
  */
 export async function scoreChampionsAndPersist(
   supabase: SupabaseClient,
@@ -255,30 +177,68 @@ export async function scoreChampionsAndPersist(
     allEvents.push(...events);
   }
 
-  const predictionUserIds = predictions.map((p) => p.user_id);
-  if (predictionUserIds.length > 0) {
-    // Filter by tournament_id so a champion correction in tournament A
-    // doesn't wipe champion scores from tournament B for the same user.
-    const { error: deleteError } = await supabase
-      .from("scores")
-      .delete()
-      .eq("reason", REASONS.CHAMPION)
-      .eq("tournament_id", tournamentId)
-      .in("champion_prediction_user_id", predictionUserIds);
-    if (deleteError) {
-      console.error("[scoreChampionsAndPersist] stale delete failed", deleteError);
-      return { eventsWritten: 0, error: `delete: ${deleteError.message}` };
-    }
+  const { error: replaceError } = await supabase.rpc("replace_scores", {
+    p_tournament_id: tournamentId,
+    p_reason: REASONS.CHAMPION,
+    p_rows: allEvents.map((e) => toScoreRow(e, tournamentId)),
+  });
+  if (replaceError) {
+    console.error("[scoreChampionsAndPersist] replace failed", replaceError);
+    return { eventsWritten: 0, error: `replace: ${replaceError.message}` };
+  }
+  return { eventsWritten: allEvents.length };
+}
+
+/**
+ * Score everyone's advancer predictions against the official set. Atomic
+ * replace (delete+insert in one RPC) so an admin correction re-scores cleanly.
+ */
+export async function scoreAdvancersAndPersist(
+  supabase: SupabaseClient,
+  tournamentId: string,
+): Promise<{ eventsWritten: number; error?: string }> {
+  const { data: officialRows, error: officialError } = await supabase
+    .from("tournament_advancers")
+    .select("team_name")
+    .eq("tournament_id", tournamentId);
+  if (officialError) {
+    console.error("[scoreAdvancersAndPersist] official fetch failed", officialError);
+    return { eventsWritten: 0, error: `official: ${officialError.message}` };
+  }
+  const officialTeams = new Set(
+    ((officialRows as { team_name: string }[]) ?? []).map((r) => r.team_name),
+  );
+
+  const { data: predData, error: predError } = await supabase.rpc(
+    "get_advancer_predictions_for_scoring",
+    { p_tournament_id: tournamentId },
+  );
+  if (predError) {
+    console.error("[scoreAdvancersAndPersist] predictions fetch failed", predError);
+    return { eventsWritten: 0, error: `fetch: ${predError.message}` };
+  }
+  const rows = (predData ?? []) as { user_id: string; team_name: string }[];
+
+  const byUser = new Map<string, string[]>();
+  for (const r of rows) {
+    const list = byUser.get(r.user_id) ?? [];
+    list.push(r.team_name);
+    byUser.set(r.user_id, list);
   }
 
-  if (allEvents.length === 0) return { eventsWritten: 0 };
+  const allEvents: ScoreEvent[] = [];
+  for (const [userId, teams] of byUser) {
+    allEvents.push(...scoreAdvancerPrediction(userId, teams, officialTeams));
+  }
 
-  const { error: insertError } = await supabase
-    .from("scores")
-    .insert(allEvents.map((e) => toScoreRow(e, tournamentId)));
-
-  if (insertError) {
-    return { eventsWritten: 0, error: `insert: ${insertError.message}` };
+  const { error: replaceError } = await supabase.rpc("replace_scores", {
+    p_tournament_id: tournamentId,
+    p_reason: REASONS.ADVANCER,
+    p_rows: allEvents.map((e) => toScoreRow(e, tournamentId)),
+  });
+  if (replaceError) {
+    console.error("[scoreAdvancersAndPersist] replace failed", replaceError);
+    return { eventsWritten: 0, error: `replace: ${replaceError.message}` };
   }
   return { eventsWritten: allEvents.length };
 }

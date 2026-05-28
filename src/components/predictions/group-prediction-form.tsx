@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { flagFor } from "@/lib/wc2026/flags";
-import type { GroupPrediction, Match } from "@/types/db";
 
 export type GroupConfig = {
   name: string;
@@ -15,24 +14,16 @@ const MAX_THIRD_PLACE_GROUPS = 8;
 
 export function GroupPredictionForm({
   groups,
-  initialPredictions,
+  initialPicks,
   onPickChange,
 }: {
-  tournamentId?: string;
   groups: GroupConfig[];
-  matchesByGroup?: Record<string, Match[]>;
-  initialPredictions: Record<string, GroupPrediction | undefined>;
+  initialPicks: string[];
   onPickChange?: (picked: Set<string>) => void;
 }) {
-  const [picked, setPicked] = useState<Set<string>>(() => {
-    const initial = new Set<string>();
-    for (const g of groups) {
-      const pred = initialPredictions[g.name];
-      if (pred?.advancing_team_1) initial.add(pred.advancing_team_1);
-      if (pred?.advancing_team_2) initial.add(pred.advancing_team_2);
-    }
-    return initial;
-  });
+  const [picked, setPicked] = useState<Set<string>>(
+    () => new Set(initialPicks),
+  );
 
   function groupCount(groupTeams: string[], set: Set<string>) {
     return groupTeams.filter((t) => set.has(t)).length;

@@ -5,48 +5,71 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { flagFor } from "@/lib/wc2026/flags";
 import { formatKickoffBRT } from "@/lib/wc2026/dates";
-import type { Match } from "@/types/db";
+import type { Match, MatchStage } from "@/types/db";
+
+const LATE_STAGES = new Set<MatchStage>(["semi", "third_place", "final"]);
 
 export function FinalizeMatchRow({ match }: { match: Match }) {
   const router = useRouter();
-  const [homeScore, setHomeScore] = useState<string>(
-    match.home_score?.toString() ?? "",
-  );
-  const [awayScore, setAwayScore] = useState<string>(
-    match.away_score?.toString() ?? "",
-  );
-  const [winner, setWinner] = useState<"home" | "away" | "draw" | "">(
-    match.winner ?? "",
+  const isGroup = match.stage === "group";
+  const isLate = LATE_STAGES.has(match.stage);
+  // Early knockout (R32/R16/QF) is winner-only; group + late stages take scores.
+  const needsScore = isGroup || isLate;
+
+  const [homeScore, setHomeScore] = useState(match.home_score?.toString() ?? "");
+  const [awayScore, setAwayScore] = useState(match.away_score?.toString() ?? "");
+  const [winner, setWinner] = useState<"home" | "away" | "">(
+    match.winner === "home" || match.winner === "away" ? match.winner : "",
   );
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isGroup = match.stage === "group";
-  const canDraw = isGroup;
+  const tie =
+    homeScore !== "" && awayScore !== "" && Number(homeScore) === Number(awayScore);
+  const showPenalty = isLate && tie;
 
   async function finalize() {
     setError(null);
-    const hs = Number(homeScore);
-    const as = Number(awayScore);
-    if (!Number.isInteger(hs) || !Number.isInteger(as)) {
-      setError("Scores must be integers");
-      return;
+    let payload: {
+      matchId: string;
+      winner: string;
+      homeScore?: number;
+      awayScore?: number;
+    };
+
+    if (needsScore) {
+      const hs = Number(homeScore);
+      const as = Number(awayScore);
+      if (!Number.isInteger(hs) || !Number.isInteger(as) || hs < 0 || as < 0) {
+        setError("Enter both scores");
+        return;
+      }
+      let w: string;
+      if (hs > as) w = "home";
+      else if (as > hs) w = "away";
+      else if (isGroup) w = "draw";
+      else {
+        if (!winner) {
+          setError("Tie — pick who won on penalties");
+          return;
+        }
+        w = winner;
+      }
+      payload = { matchId: match.id, winner: w, homeScore: hs, awayScore: as };
+    } else {
+      if (!winner) {
+        setError("Pick the winner");
+        return;
+      }
+      payload = { matchId: match.id, winner };
     }
-    if (!winner) {
-      setError("Pick a winner");
-      return;
-    }
+
     setBusy("finalize");
     try {
       const res = await fetch("/api/admin/finalize-match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          matchId: match.id,
-          homeScore: hs,
-          awayScore: as,
-          winner,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.details ?? json.error ?? "Finalize failed");
@@ -77,6 +100,22 @@ export function FinalizeMatchRow({ match }: { match: Match }) {
     }
   }
 
+  function WinnerBtn({ side, label }: { side: "home" | "away"; label: string }) {
+    const active = winner === side;
+    return (
+      <button
+        onClick={() => setWinner(side)}
+        className={`px-2.5 py-1 rounded text-sm border transition ${
+          active
+            ? "bg-jagpool-primary border-jagpool-primary text-white"
+            : "bg-white/5 border-white/10 text-foreground/60 hover:bg-white/10"
+        }`}
+      >
+        {label}
+      </button>
+    );
+  }
+
   return (
     <li className="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -88,41 +127,50 @@ export function FinalizeMatchRow({ match }: { match: Match }) {
           <span className="mx-2 text-foreground/40">vs</span>
           {flagFor(match.away_team ?? "")} {match.away_team ?? "TBD"}
         </span>
-        <span className="text-xs text-foreground/40 ml-2">
+        <span className="text-xs text-foreground/40 ml-2 hidden sm:inline">
           {formatKickoffBRT(match.kickoff_at)}
         </span>
       </div>
       <div className="flex items-center gap-2 flex-wrap">
-        <input
-          type="number"
-          min={0}
-          max={99}
-          value={homeScore}
-          onChange={(e) => setHomeScore(e.target.value)}
-          placeholder="H"
-          className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-sm"
-        />
-        <input
-          type="number"
-          min={0}
-          max={99}
-          value={awayScore}
-          onChange={(e) => setAwayScore(e.target.value)}
-          placeholder="A"
-          className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-sm"
-        />
-        <select
-          value={winner}
-          onChange={(e) =>
-            setWinner(e.target.value as "home" | "away" | "draw" | "")
-          }
-          className="bg-white/5 border border-white/10 rounded px-2 py-1 text-sm"
-        >
-          <option value="">winner…</option>
-          <option value="home">home</option>
-          <option value="away">away</option>
-          {canDraw ? <option value="draw">draw</option> : null}
-        </select>
+        {needsScore ? (
+          <>
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={homeScore}
+              onChange={(e) => setHomeScore(e.target.value)}
+              placeholder="H"
+              className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-sm"
+            />
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={awayScore}
+              onChange={(e) => setAwayScore(e.target.value)}
+              placeholder="A"
+              className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-sm"
+            />
+            {showPenalty ? (
+              <span className="flex items-center gap-1">
+                <span className="text-[10px] uppercase text-foreground/40">
+                  pens
+                </span>
+                <WinnerBtn side="home" label="H" />
+                <WinnerBtn side="away" label="A" />
+              </span>
+            ) : null}
+          </>
+        ) : (
+          <span className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase text-foreground/40">
+              advances
+            </span>
+            <WinnerBtn side="home" label={match.home_team ?? "Home"} />
+            <WinnerBtn side="away" label={match.away_team ?? "Away"} />
+          </span>
+        )}
         <Button size="sm" onClick={finalize} disabled={busy !== null}>
           {busy === "finalize" ? "…" : "Finalize"}
         </Button>
