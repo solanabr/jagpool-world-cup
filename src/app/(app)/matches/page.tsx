@@ -1,6 +1,6 @@
 import { requireOnboardedUser } from "@/lib/user-state";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { flagFor } from "@/lib/wc2026/flags";
+import { TeamFlag } from "@/components/ui/team-flag";
 import type { Match, MatchStage, MatchStatus } from "@/types/db";
 
 export const dynamic = "force-dynamic";
@@ -153,7 +153,7 @@ function MatchRow({ match, last }: { match: Match; last: boolean }) {
       </span>
 
       <div className="flex-1 flex items-center gap-1.5 min-w-0 text-sm">
-        <span className="leading-none">{flagFor(match.home_team ?? "")}</span>
+        <TeamFlag team={match.home_team ?? ""} className="leading-none" />
         <span className={`font-medium truncate ${isDone ? "text-foreground/45" : "text-foreground/85"}`}>
           {match.home_team ?? "TBD"}
         </span>
@@ -166,7 +166,7 @@ function MatchRow({ match, last }: { match: Match; last: boolean }) {
           <span className="mx-1.5 text-foreground/20 text-xs shrink-0">vs</span>
         )}
 
-        <span className="leading-none">{flagFor(match.away_team ?? "")}</span>
+        <TeamFlag team={match.away_team ?? ""} className="leading-none" />
         <span className={`font-medium truncate ${isDone ? "text-foreground/45" : "text-foreground/85"}`}>
           {match.away_team ?? "TBD"}
         </span>

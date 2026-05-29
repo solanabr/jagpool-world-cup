@@ -8,6 +8,7 @@ import {
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import "@solana/wallet-adapter-react-ui/styles.css";
+import { SiwsProvider } from "@/components/auth/siws-provider";
 
 export function WalletContextProvider({ children }: { children: ReactNode }) {
   const endpoint =
@@ -21,7 +22,9 @@ export function WalletContextProvider({ children }: { children: ReactNode }) {
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        <WalletModalProvider>
+          <SiwsProvider>{children}</SiwsProvider>
+        </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );

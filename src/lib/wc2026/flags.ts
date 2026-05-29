@@ -1,5 +1,6 @@
-// Map FIFA WC 2026 team names to ISO-2 country codes, then to Unicode flag emoji.
-// Foundation-only: frontend dev can swap to SVG flag images later if desired.
+// Map FIFA WC 2026 team names to flag-icons codes (ISO-2 lowercase, or GB
+// subdivision codes). Rendered as bundled SVGs by <TeamFlag> — Unicode flag
+// emoji don't render on Windows.
 
 const ISO_CODES: Record<string, string> = {
   Algeria: "DZ",
@@ -50,22 +51,16 @@ const ISO_CODES: Record<string, string> = {
   Uzbekistan: "UZ",
 };
 
-// England and Scotland use Unicode tag sequences (subdivision flags), not ISO regional indicators
-const SUBDIVISION_FLAGS: Record<string, string> = {
-  England: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  Scotland: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+// flag-icons codes for GB subdivisions (England/Scotland aren't ISO-2 countries).
+const SUBDIVISION_CODES: Record<string, string> = {
+  England: "gb-eng",
+  Scotland: "gb-sct",
 };
 
-function codeToFlag(iso2: string): string {
-  return iso2
-    .toUpperCase()
-    .split("")
-    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
-    .join("");
-}
-
-export function flagFor(team: string): string {
-  if (SUBDIVISION_FLAGS[team]) return SUBDIVISION_FLAGS[team];
+// flag-icons code (lowercase ISO-2, or a GB subdivision) for a team, or null if
+// unknown. Rendered as a bundled SVG by <TeamFlag>.
+export function flagCodeFor(team: string): string | null {
+  if (SUBDIVISION_CODES[team]) return SUBDIVISION_CODES[team];
   const code = ISO_CODES[team];
-  return code ? codeToFlag(code) : "";
+  return code ? code.toLowerCase() : null;
 }

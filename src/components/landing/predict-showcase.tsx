@@ -2,23 +2,16 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Reveal } from "@/components/ui/reveal";
+import { TeamFlag } from "@/components/ui/team-flag";
 
-const GROUP_TEAMS = [
-  { flag: "🇧🇷", name: "Brazil" },
-  { flag: "🇲🇽", name: "Mexico" },
-];
+const GROUP_TEAMS = [{ name: "Brazil" }, { name: "Mexico" }];
 
 const CHAMPION_TEAMS = [
-  { flag: "🇦🇷", name: "Argentina" },
-  { flag: "🇧🇷", name: "Brazil" },
-  { flag: "🇫🇷", name: "France" },
-  { flag: "🇩🇪", name: "Germany" },
+  { name: "Argentina" },
+  { name: "Brazil" },
+  { name: "France" },
+  { name: "Germany" },
 ];
-
-const FLAG: Record<string, string> = {
-  Argentina: "🇦🇷", France: "🇫🇷", Spain: "🇪🇸",
-  Germany: "🇩🇪", Brazil: "🇧🇷", Mexico: "🇲🇽",
-};
 
 export function PredictShowcase() {
   const [groupPicks, setGroupPicks] = useState<string[]>([]);
@@ -83,7 +76,7 @@ export function PredictShowcase() {
         </div>
         <p className="relative text-xs text-foreground/40">Pick who advances from each group</p>
         <div className="relative flex flex-col gap-2 mt-auto">
-          {sortedGroup.map(({ flag, name }) => {
+          {sortedGroup.map(({ name }) => {
             const idx = groupPicks.indexOf(name);
             const selected = idx !== -1;
             const pos = idx === 0 ? "1st" : "2nd";
@@ -96,7 +89,7 @@ export function PredictShowcase() {
                   selected ? "bg-white/5" : "bg-white/5 opacity-35 hover:opacity-60"
                 }`}
               >
-                <span className="text-base">{flag}</span>
+                <TeamFlag team={name} className="text-base" />
                 <span className="text-sm font-medium flex-1">{name}</span>
                 {selected && <span className="text-[10px] font-bold text-[#129D49]">{pos} ✓</span>}
               </button>
@@ -117,14 +110,14 @@ export function PredictShowcase() {
         <p className="relative text-xs text-foreground/40">Pick the winner of every match</p>
         <div className="relative flex flex-col gap-2 mt-auto">
           <KnockMatch
-            a={{ flag: "🇦🇷", name: "Argentina" }}
-            b={{ flag: "🇫🇷", name: "France" }}
+            a={{ name: "Argentina" }}
+            b={{ name: "France" }}
             pick={knock1}
             onPick={(name) => setKnock1(knock1 === name ? null : name)}
           />
           <KnockMatch
-            a={{ flag: "🇪🇸", name: "Spain" }}
-            b={{ flag: "🇩🇪", name: "Germany" }}
+            a={{ name: "Spain" }}
+            b={{ name: "Germany" }}
             pick={knock2}
             onPick={(name) => setKnock2(knock2 === name ? null : name)}
             dimmed={knock2 === null}
@@ -162,7 +155,7 @@ export function PredictShowcase() {
                               : "bg-white/4 border-transparent hover:bg-white/6"
                         }`}
                       >
-                        <span className="text-2xl">{FLAG[k]}</span>
+                        <TeamFlag team={k} className="text-2xl" />
                         <span className={`text-sm font-bold truncate ${picked ? "text-jagpool-accent" : ""}`}>{k}</span>
                       </button>
                     </div>
@@ -176,7 +169,7 @@ export function PredictShowcase() {
           ) : singleKnock ? (
             <>
               <div className="bg-white/5 rounded-xl px-3.5 py-3 flex items-center gap-3">
-                <span className="text-2xl">{FLAG[singleKnock]}</span>
+                <TeamFlag team={singleKnock} className="text-2xl" />
                 <p className="flex-1 font-black text-sm">{singleKnock}</p>
                 <span className="text-jagpool-accent font-black text-base">+30</span>
               </div>
@@ -190,7 +183,7 @@ export function PredictShowcase() {
                 onClick={() => setChampionIdx((i) => (i + 1) % CHAMPION_TEAMS.length)}
                 className="bg-white/5 rounded-xl px-3.5 py-3 flex items-center gap-3 w-full text-left hover:bg-white/8 transition-colors"
               >
-                <span className="text-2xl">{champion.flag}</span>
+                <TeamFlag team={champion.name} className="text-2xl" />
                 <p className="flex-1 font-black text-sm">{champion.name}</p>
                 <span className="text-jagpool-accent font-black text-base">+30</span>
               </button>
@@ -210,8 +203,8 @@ export function PredictShowcase() {
 function KnockMatch({
   a, b, pick, onPick, dimmed = false, accent = "blue", tall = false,
 }: {
-  a: { flag: string; name: string };
-  b: { flag: string; name: string };
+  a: { name: string };
+  b: { name: string };
   pick: string | null;
   onPick: (name: string) => void;
   dimmed?: boolean;
@@ -251,7 +244,7 @@ function KnockMatch({
                     : "bg-white/4 border-transparent hover:bg-white/6"
               }`}
             >
-              <span className={tall ? "text-2xl" : "text-base"}>{team.flag}</span>
+              <TeamFlag team={team.name} className={tall ? "text-2xl" : "text-base"} />
               <span className={`${tall ? "text-sm font-bold" : "text-sm"} ${picked ? selectedTextCls : "font-medium"}`}>
                 {team.name}
               </span>

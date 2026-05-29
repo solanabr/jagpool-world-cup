@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { flagFor } from "@/lib/wc2026/flags";
+import { TeamFlag } from "@/components/ui/team-flag";
 import { formatKickoffBRT } from "@/lib/wc2026/dates";
 import { isMatchReadyForPrediction, isPlaceholderTeam } from "@/lib/wc2026/knockout";
 import type { Match, MatchPrediction } from "@/types/db";
@@ -86,12 +86,12 @@ export function KnockoutMatchForm({
           </span>
           <span className="truncate text-sm">
             <span className={isPlaceholderTeam(match.home_team) ? "text-foreground/50 italic" : ""}>
-              {!isPlaceholderTeam(match.home_team) ? `${flagFor(match.home_team ?? "")} ` : ""}
+              {!isPlaceholderTeam(match.home_team) ? <TeamFlag team={match.home_team ?? ""} className="mr-1" /> : null}
               {match.home_team ?? "TBD"}
             </span>
             <span className="mx-2 text-foreground/40">vs</span>
             <span className={isPlaceholderTeam(match.away_team) ? "text-foreground/50 italic" : ""}>
-              {!isPlaceholderTeam(match.away_team) ? `${flagFor(match.away_team ?? "")} ` : ""}
+              {!isPlaceholderTeam(match.away_team) ? <TeamFlag team={match.away_team ?? ""} className="mr-1" /> : null}
               {match.away_team ?? "TBD"}
             </span>
           </span>
@@ -126,7 +126,7 @@ export function KnockoutMatchForm({
                       : "bg-white/5 border-white/10 text-foreground/60 hover:border-white/20 hover:text-foreground/90"
                 }`}
               >
-                <span>{flagFor(teamName)}</span>
+                <TeamFlag team={teamName} />
                 <span>{teamName}</span>
               </button>
             );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { flagFor } from "@/lib/wc2026/flags";
+import { TeamFlag } from "@/components/ui/team-flag";
 
 interface Option {
   value: string;
@@ -90,7 +90,7 @@ export function TeamSelect({
             </span>
           ) : selected ? (
             <span className="flex items-center gap-2 text-white">
-              {selected.flag ?? flagFor(selected.label)}
+              <TeamFlag team={selected.label} />
               <span className="truncate">{selected.label}</span>
             </span>
           ) : (
@@ -134,9 +134,7 @@ export function TeamSelect({
                           : "text-foreground/70 hover:bg-white/6 hover:text-foreground"
                       }`}
                     >
-                      <span className="text-base leading-none shrink-0">
-                        {opt.flag ?? flagFor(opt.label)}
-                      </span>
+                      <TeamFlag team={opt.label} className="text-base leading-none shrink-0" />
                       <span className="flex-1 truncate">{opt.label}</span>
                       {isSelected ? (
                         <svg className="shrink-0 text-[#129D49]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

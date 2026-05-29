@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { flagFor } from "@/lib/wc2026/flags";
+import { TeamFlag } from "@/components/ui/team-flag";
 import { formatKickoffBRT } from "@/lib/wc2026/dates";
 import type { Match, MatchStage } from "@/types/db";
 
@@ -123,9 +123,9 @@ export function FinalizeMatchRow({ match }: { match: Match }) {
           #{match.match_number}
         </span>
         <span className="truncate text-sm">
-          {flagFor(match.home_team ?? "")} {match.home_team ?? "TBD"}
+          <TeamFlag team={match.home_team ?? ""} /> {match.home_team ?? "TBD"}
           <span className="mx-2 text-foreground/40">vs</span>
-          {flagFor(match.away_team ?? "")} {match.away_team ?? "TBD"}
+          <TeamFlag team={match.away_team ?? ""} /> {match.away_team ?? "TBD"}
         </span>
         <span className="text-xs text-foreground/40 ml-2 hidden sm:inline">
           {formatKickoffBRT(match.kickoff_at)}

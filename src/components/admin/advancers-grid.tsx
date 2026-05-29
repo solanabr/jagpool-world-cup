@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { flagFor } from "@/lib/wc2026/flags";
+import { TeamFlag } from "@/components/ui/team-flag";
 import type { WcGroup } from "@/lib/wc2026/groups";
 
 const MAX_TOTAL = 32;
@@ -133,7 +133,7 @@ export function AdvancersGrid({
                             : "bg-white/5 border border-white/8 text-foreground/60 hover:bg-white/8 hover:text-white"
                       }`}
                     >
-                      <span className="shrink-0">{flagFor(team)}</span>
+                      <TeamFlag team={team} className="shrink-0" />
                       <span className="truncate">{team}</span>
                     </button>
                   );

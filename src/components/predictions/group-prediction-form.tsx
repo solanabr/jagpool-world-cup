@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { flagFor } from "@/lib/wc2026/flags";
+import { TeamFlag } from "@/components/ui/team-flag";
 
 export type GroupConfig = {
   name: string;
@@ -140,7 +140,7 @@ export function GroupPredictionForm({
                               : "bg-white/5 border border-white/8 text-foreground/60 hover:bg-white/8 hover:text-white cursor-pointer"
                       }`}
                     >
-                      <span className="shrink-0">{flagFor(team)}</span>
+                      <TeamFlag team={team} className="shrink-0" />
                       <span className="truncate">{team}</span>
                     </button>
                   );

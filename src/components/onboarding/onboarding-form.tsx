@@ -106,7 +106,7 @@ export function OnboardingForm({
     const { error: linkErr } = await supabase.auth.linkIdentity({
       provider: "x",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     // On success the browser redirects to X; only errors return here.

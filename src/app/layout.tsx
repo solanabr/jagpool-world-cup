@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { DynamicWalletProvider } from "@/components/providers/wallet-provider-dynamic";
+import "flag-icons/css/flag-icons.min.css";
+import { WalletContextProvider } from "@/components/providers/wallet-provider";
 
 export const metadata: Metadata = {
   title: "JagPool World Cup",
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <DynamicWalletProvider>{children}</DynamicWalletProvider>
+        <WalletContextProvider>{children}</WalletContextProvider>
       </body>
     </html>
   );

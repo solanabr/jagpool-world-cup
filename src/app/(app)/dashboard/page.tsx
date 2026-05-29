@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ValidatorLogo } from "@/components/ui/validator-logo";
 import { Countdown } from "@/components/predictions/countdown";
 import { formatKickoffBRT } from "@/lib/wc2026/dates";
-import { flagFor } from "@/lib/wc2026/flags";
+import { TeamFlag } from "@/components/ui/team-flag";
 import type { Match, Tournament } from "@/types/db";
 import type { UserLeaderboardRow } from "@/types/db";
 
@@ -190,9 +190,9 @@ export default async function DashboardPage() {
                     Next match
                   </p>
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{flagFor(nextMatch.home_team ?? "")}</span>
+                    <TeamFlag team={nextMatch.home_team ?? ""} className="text-2xl" />
                     <span className="text-xs text-foreground/30 font-bold">vs</span>
-                    <span className="text-2xl">{flagFor(nextMatch.away_team ?? "")}</span>
+                    <TeamFlag team={nextMatch.away_team ?? ""} className="text-2xl" />
                   </div>
                   <p className="text-sm font-medium text-foreground/80 leading-tight">
                     {nextMatch.home_team ?? "TBD"} — {nextMatch.away_team ?? "TBD"}
