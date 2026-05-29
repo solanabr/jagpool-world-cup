@@ -122,7 +122,7 @@ export function KnockoutMatchForm({
                   isDisabled
                     ? "opacity-40 cursor-not-allowed bg-white/3 border-white/8 text-foreground/40"
                     : isActive
-                      ? "bg-jagpool-primary/12 border-jagpool-primary/40 text-jagpool-primary shadow-sm shadow-jagpool-primary/10"
+                      ? "bg-[#129D49]/12 border-[#129D49]/40 text-[#129D49] shadow-sm shadow-[#129D49]/10"
                       : "bg-white/5 border-white/10 text-foreground/60 hover:border-white/20 hover:text-foreground/90"
                 }`}
               >
@@ -167,7 +167,7 @@ export function KnockoutMatchForm({
           </Button>
 
           {saved ? (
-            <span className="text-xs text-emerald-400">Saved</span>
+            <span className="text-xs text-[#129D49]">Saved</span>
           ) : null}
           {error ? <span className="text-xs text-red-400">{error}</span> : null}
         </div>

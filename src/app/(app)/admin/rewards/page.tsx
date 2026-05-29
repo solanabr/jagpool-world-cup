@@ -16,8 +16,8 @@ type Snapshot = {
 
 const STATUS_BADGE: Record<Snapshot["status"], string> = {
   draft: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-  finalized: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
-  paid: "border-jagpool-primary/40 bg-jagpool-primary/10 text-jagpool-primary",
+  finalized: "border-emerald-500/40 bg-emerald-500/10 text-[#129D49]",
+  paid: "border-[#129D49]/40 bg-[#129D49]/10 text-[#129D49]",
 };
 
 export default async function AdminRewardsPage() {

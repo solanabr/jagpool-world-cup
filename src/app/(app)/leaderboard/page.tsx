@@ -101,10 +101,10 @@ async function renderLiveMode(
                 Your rank
               </p>
               <div className="flex items-center gap-2 sm:justify-end">
-                <p className="text-2xl font-black text-jagpool-primary leading-none">
+                <p className="text-2xl font-black text-[#129D49] leading-none">
                   #{myRank}
                 </p>
-                <span className="text-[10px] font-bold text-jagpool-primary bg-jagpool-primary/12 border border-jagpool-primary/25 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-[#129D49] bg-[#129D49]/12 border border-[#129D49]/25 px-2 py-0.5 rounded-full uppercase tracking-widest">
                   Live
                 </span>
               </div>
@@ -114,7 +114,7 @@ async function renderLiveMode(
               </p>
             </div>
           ) : (
-            <span className="text-[10px] font-bold text-jagpool-primary bg-jagpool-primary/12 border border-jagpool-primary/25 px-2.5 py-1 rounded-full uppercase tracking-widest">
+            <span className="text-[10px] font-bold text-[#129D49] bg-[#129D49]/12 border border-[#129D49]/25 px-2.5 py-1 rounded-full uppercase tracking-widest">
               Live
             </span>
           )}
@@ -141,12 +141,12 @@ async function renderLiveMode(
                   const isMe = u.user_id === userId;
                   const medals = ["🥇", "🥈", "🥉"];
                   const styles = [
-                    "border-jagpool-accent/30 bg-linear-to-r from-jagpool-accent/8 to-transparent",
+                    "border-[#FFD23F]/30 bg-linear-to-r from-jagpool-accent/8 to-transparent",
                     isMe
-                      ? "border-jagpool-primary/25 bg-jagpool-primary/6"
+                      ? "border-[#129D49]/25 bg-[#129D49]/6"
                       : "border-white/10 bg-white/4",
                     isMe
-                      ? "border-jagpool-primary/25 bg-jagpool-primary/6"
+                      ? "border-[#129D49]/25 bg-[#129D49]/6"
                       : "border-white/8 bg-white/3",
                   ];
                   return (
@@ -164,11 +164,11 @@ async function renderLiveMode(
                       />
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`font-bold text-sm truncate ${i === 0 ? "text-jagpool-accent" : isMe ? "text-jagpool-primary" : ""}`}
+                          className={`font-bold text-sm truncate ${i === 0 ? "text-jagpool-accent" : isMe ? "text-[#129D49]" : ""}`}
                         >
                           {u.username}
                           {isMe ? (
-                            <span className="ml-1 text-[8px] bg-jagpool-primary/15 text-jagpool-primary px-1 py-0.5 rounded">
+                            <span className="ml-1 text-[8px] bg-[#129D49]/15 text-[#129D49] px-1 py-0.5 rounded">
                               you
                             </span>
                           ) : null}
@@ -198,7 +198,7 @@ async function renderLiveMode(
                     return (
                       <li
                         key={u.user_id}
-                        className={`flex items-center gap-3 px-4 py-3 transition-colors ${isMe ? "bg-jagpool-primary/8 border-l-2 border-l-jagpool-primary" : "hover:bg-white/3"}`}
+                        className={`flex items-center gap-3 px-4 py-3 transition-colors ${isMe ? "bg-[#129D49]/8 border-l-2 border-l-[#129D49]" : "hover:bg-white/3"}`}
                       >
                         <span className="text-sm w-7 text-center text-foreground/25 tabular-nums shrink-0">
                           {rank}
@@ -212,7 +212,7 @@ async function renderLiveMode(
                           <div className="flex items-center gap-1.5 text-sm font-semibold">
                             {u.username}
                             {isMe ? (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-jagpool-primary/15 text-jagpool-primary font-bold">
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#129D49]/15 text-[#129D49] font-bold">
                                 you
                               </span>
                             ) : null}
@@ -253,7 +253,7 @@ async function renderLiveMode(
             return (
               <div
                 key={v.validator_id}
-                className={`flex items-center gap-3 p-4 rounded-2xl border transition-colors ${isFirst ? "border-jagpool-accent/30 bg-jagpool-accent/5" : "border-white/8 bg-white/3"}`}
+                className={`flex items-center gap-3 p-4 rounded-2xl border transition-colors ${isFirst ? "border-[#FFD23F]/30 bg-jagpool-accent/5" : "border-white/8 bg-white/3"}`}
               >
                 <RankNum rank={rank} />
                 <ValidatorLogo url={v.logo_url} name={v.name} size={40} />
@@ -261,7 +261,7 @@ async function renderLiveMode(
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-bold text-sm truncate">{v.name}</p>
                     {isFirst ? (
-                      <span className="text-[9px] font-bold text-jagpool-accent bg-jagpool-accent/12 border border-jagpool-accent/20 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                      <span className="text-[9px] font-bold text-jagpool-accent bg-jagpool-accent/12 border border-[#FFD23F]/20 px-1.5 py-0.5 rounded uppercase tracking-wide">
                         Leading
                       </span>
                     ) : null}
@@ -328,8 +328,8 @@ async function renderSnapshotMode(
       </div>
 
       {myReward ? (
-        <div className="relative overflow-hidden rounded-2xl border border-jagpool-primary/25 bg-jagpool-primary/5 px-6 py-5">
-          <div className="absolute inset-0 bg-linear-to-r from-jagpool-primary/8 to-transparent pointer-events-none" />
+        <div className="relative overflow-hidden rounded-2xl border border-[#129D49]/25 bg-[#129D49]/5 px-6 py-5">
+          <div className="absolute inset-0 bg-linear-to-r from-[#129D49]/8 to-transparent pointer-events-none" />
           <p className="text-xs text-foreground/40 uppercase tracking-widest font-medium mb-4">
             Your result
           </p>
@@ -346,7 +346,7 @@ async function renderSnapshotMode(
                   href={`https://solscan.io/tx/${myReward.payout_tx_signature}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-mono text-sm text-jagpool-primary"
+                  className="font-mono text-sm text-[#129D49]"
                 >
                   {shortAddress(myReward.payout_tx_signature, 6, 6)}
                 </a>
@@ -366,7 +366,7 @@ async function renderSnapshotMode(
       )}
 
       {winnerV ? (
-        <div className="relative overflow-hidden rounded-2xl border border-jagpool-accent/30 bg-jagpool-accent/5 px-6 py-5">
+        <div className="relative overflow-hidden rounded-2xl border border-[#FFD23F]/30 bg-jagpool-accent/5 px-6 py-5">
           <div className="absolute inset-0 bg-linear-to-r from-jagpool-accent/5 to-transparent pointer-events-none" />
           <p className="text-xs text-foreground/40 uppercase tracking-widest font-medium mb-3">
             Winning validator 🏆
@@ -406,14 +406,14 @@ async function renderSnapshotMode(
                 return (
                   <li
                     key={u.user_id}
-                    className={`flex items-center gap-3 px-4 py-3 ${isMe ? "bg-jagpool-primary/8 border-l-2 border-l-jagpool-primary" : "hover:bg-white/3"}`}
+                    className={`flex items-center gap-3 px-4 py-3 ${isMe ? "bg-[#129D49]/8 border-l-2 border-l-[#129D49]" : "hover:bg-white/3"}`}
                   >
                     <RankNum rank={u.rank} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 text-sm font-semibold">
                         {u.username}
                         {isMe ? (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-jagpool-primary/15 text-jagpool-primary font-bold">
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#129D49]/15 text-[#129D49] font-bold">
                             you
                           </span>
                         ) : null}
@@ -510,8 +510,8 @@ function Kpi({
 function SnapshotBadge({ status }: { status: Snapshot["status"] }) {
   const s = {
     draft: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-    finalized: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-    paid: "bg-jagpool-primary/15 text-jagpool-primary border-jagpool-primary/30",
+    finalized: "bg-emerald-500/15 text-[#129D49] border-emerald-500/30",
+    paid: "bg-[#129D49]/15 text-[#129D49] border-[#129D49]/30",
   };
   return (
     <span
@@ -526,7 +526,7 @@ function PayoutBadge({ status }: { status: PayoutStatus }) {
   const s: Record<PayoutStatus, string> = {
     pending: "text-foreground/35",
     sent: "text-amber-400",
-    confirmed: "text-emerald-400",
+    confirmed: "text-[#129D49]",
     failed: "text-red-400",
   };
   return (

@@ -297,7 +297,7 @@ function StageDetails({
   // header; the body is rendered when open. Browser handles the toggle.
   const borderClass =
     status === "active"
-      ? "border-jagpool-primary/40 bg-jagpool-primary/5"
+      ? "border-[#129D49]/40 bg-[#129D49]/5"
       : status === "locked"
         ? "border-white/10 bg-white/[0.02] opacity-80"
         : "border-white/10 bg-white/5";
@@ -322,7 +322,7 @@ function StageDetails({
 
 function StatusBadge({ status }: { status: StageStatus }) {
   const styles: Record<StageStatus, string> = {
-    active: "bg-jagpool-primary/20 text-jagpool-primary border-jagpool-primary/40",
+    active: "bg-[#129D49]/20 text-[#129D49] border-[#129D49]/40",
     pending: "bg-white/5 text-foreground/50 border-white/10",
     locked: "bg-white/5 text-foreground/40 border-white/10",
   };
@@ -333,7 +333,7 @@ function StatusBadge({ status }: { status: StageStatus }) {
   };
   return (
     <span
-      className={`text-[10px] uppercase px-2 py-0.5 rounded border ${styles[status]}`}
+      className={`text-[10px] uppercase px-2 py-0.5 rounded border ${styles[status]}${status === "pending" ? " hidden sm:inline" : ""}`}
     >
       {labels[status]}
     </span>
@@ -344,7 +344,7 @@ function ProgressChip({ label, done }: { label: string; done: boolean }) {
   return (
     <span
       className={`text-[10px] uppercase ${
-        done ? "text-emerald-400" : "text-amber-300"
+        done ? "text-[#129D49]" : "text-amber-300"
       }`}
     >
       {label}

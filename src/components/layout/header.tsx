@@ -1,12 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
 import { resolveAuthenticatedUserState } from "@/lib/user-state";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { WalletStatus } from "@/components/auth/wallet-status";
 import { SiwsButton } from "@/components/auth/siws-button";
 import { NavLinks } from "@/components/layout/nav-links";
 
-export async function Header({ transparent = false }: { transparent?: boolean }) {
-  const state = await resolveAuthenticatedUserState();
+export async function Header({ transparent = false, staticMode = false }: { transparent?: boolean; staticMode?: boolean }) {
+  const state = staticMode ? null : await resolveAuthenticatedUserState();
   let validatorName: string | null = null;
 
   if (state?.profile?.validator_id) {
@@ -24,7 +25,7 @@ export async function Header({ transparent = false }: { transparent?: boolean })
   return (
     <header className={`sticky top-0 z-30 ${transparent ? "" : "bg-background/90 backdrop-blur-xl"}`}>
       {!transparent && (
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-jagpool-primary/35 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-[#129D49]/40 to-transparent" />
       )}
 
       <div className="max-w-6xl mx-auto px-5 h-18 flex items-center justify-between gap-8">
@@ -33,10 +34,36 @@ export async function Header({ transparent = false }: { transparent?: boolean })
 
           <Link
             href={state ? "/dashboard" : "/"}
-            className="no-underline shrink-0 font-black text-xl tracking-tight text-white leading-none"
+            className="no-underline shrink-0 flex items-center gap-2.5"
           >
-            JagPool{" "}
-            <span className="text-jagpool-primary">WC 2026</span>
+            <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+              <Image
+                src="/brand/jgst.svg"
+                alt="JagPool × Superteam Brazil"
+                width={40}
+                height={40}
+                unoptimized
+                className="w-full h-full"
+              />
+            </div>
+            <div className="flex flex-col leading-none gap-[3px]">
+              <span className="font-black text-sm tracking-tight text-white">
+                JagPool{" "}
+                <span style={{
+                  background: "linear-gradient(90deg, #129D49, #FFD23F, #129D49)",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  animation: "gradient-flow 3s linear infinite",
+                }}>
+                  WC 2026
+                </span>
+              </span>
+              <span className="text-[9px] font-semibold text-white/30 tracking-[0.18em] uppercase">
+                × Superteam Brazil
+              </span>
+            </div>
           </Link>
 
           {state?.profile?.validator_locked_at ? (
@@ -55,7 +82,9 @@ export async function Header({ transparent = false }: { transparent?: boolean })
             isAdmin={isAdmin}
           />
         ) : (
-          <SiwsButton compact />
+          <div className={staticMode ? "hidden sm:block" : undefined}>
+            <SiwsButton compact />
+          </div>
         )}
       </div>
     </header>

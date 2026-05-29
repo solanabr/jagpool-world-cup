@@ -107,7 +107,7 @@ export function FinalizeMatchRow({ match }: { match: Match }) {
         onClick={() => setWinner(side)}
         className={`px-2.5 py-1 rounded text-sm border transition ${
           active
-            ? "bg-jagpool-primary border-jagpool-primary text-white"
+            ? "bg-[#129D49] border-[#129D49] text-white"
             : "bg-white/5 border-white/10 text-foreground/60 hover:bg-white/10"
         }`}
       >

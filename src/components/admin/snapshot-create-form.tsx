@@ -57,7 +57,7 @@ export function SnapshotCreateForm({ tournamentId }: { tournamentId: string }) {
           max={100}
           value={topUsers}
           onChange={(e) => setTopUsers(e.target.value)}
-          className="w-24 bg-white/5 border border-white/10 rounded px-3 py-2 text-sm"
+          className="sm:w-24 bg-white/5 border border-white/10 rounded px-3 py-2 text-sm"
         />
         <input
           type="text"

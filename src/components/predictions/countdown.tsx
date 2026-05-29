@@ -29,7 +29,7 @@ export function Countdown({ target, label }: { target: string; label?: string })
   }
 
   if (diff === 0) {
-    return <div className="text-jagpool-primary font-bold text-lg">{label ?? "Started"}</div>;
+    return <div className="text-[#129D49] font-bold text-lg">{label ?? "Started"}</div>;
   }
 
   const days    = Math.floor(diff / 86_400_000);
@@ -62,7 +62,7 @@ function FlipTile({ value, unit }: { value: number; unit: string }) {
           <div className="absolute inset-x-0 top-0 h-1/2 bg-white/[0.03] rounded-t-xl" />
           <div className="absolute inset-x-0 top-1/2 h-px bg-black/70 z-10" />
           <div className="relative z-20 flex items-center justify-center h-full">
-            <span className="text-2xl sm:text-3xl font-black text-jagpool-primary tabular-nums leading-none tracking-tight">
+            <span className="text-2xl sm:text-3xl font-black gradient-text tabular-nums leading-none tracking-tight">
               {formatted}
             </span>
           </div>

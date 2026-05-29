@@ -20,7 +20,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
       <input
         ref={ref}
         id={inputId}
-        className={`bg-white/5 border border-white/10 rounded-md px-3 py-2 text-foreground outline-none focus:border-jagpool-primary ${className}`}
+        className={`bg-white/5 border border-white/10 rounded-md px-3 py-2 text-foreground outline-none focus:border-[#129D49] ${className}`}
         {...rest}
       />
       {error ? <span className="text-xs text-red-400">{error}</span> : null}

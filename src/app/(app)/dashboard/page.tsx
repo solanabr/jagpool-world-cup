@@ -79,14 +79,14 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-5">
 
       <div className="relative overflow-hidden bg-white/4 border border-white/10 rounded-2xl px-6 py-5">
-        <div className="absolute inset-0 bg-linear-to-r from-jagpool-primary/8 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-r from-[#129D49]/8 via-transparent to-transparent pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-8">
 
           <div className="flex items-center gap-4 flex-1 min-w-0">
             {validator ? (
               <div className="relative shrink-0">
                 <ValidatorLogo url={validator.logo_url ?? null} name={validator.name} size={52} />
-                <span className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5"><Target size={12} className="text-jagpool-primary" /></span>
+                <span className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5"><Target size={12} className="text-[#129D49]" /></span>
               </div>
             ) : null}
             <div className="min-w-0">
@@ -134,10 +134,10 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
         <Link href="/predictions" className="group no-underline">
-          <div className="relative overflow-hidden rounded-2xl border border-green-500/25 bg-linear-to-br from-green-500/14 via-green-500/5 to-transparent p-5 h-full flex flex-col hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/12 transition-all">
+          <div className="relative overflow-hidden rounded-2xl border border-jagpool-primary/25 bg-linear-to-br from-jagpool-primary/12 via-jagpool-primary/4 to-transparent p-5 h-full flex flex-col hover:-translate-y-0.5 hover:shadow-lg hover:shadow-jagpool-primary/12 transition-all">
             <div className="flex items-start justify-between mb-5">
               <span className="text-2xl">⚽</span>
-              <span className="text-[10px] text-green-400/60 uppercase tracking-widest font-semibold">
+              <span className="text-[10px] text-jagpool-primary/80 uppercase tracking-widest font-semibold">
                 Predictions
               </span>
             </div>
@@ -155,21 +155,21 @@ export default async function DashboardPage() {
               />
               <div className="mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-linear-to-r from-green-500 to-emerald-400 transition-all"
+                  className="h-full rounded-full bg-linear-to-r from-jagpool-primary to-jagpool-primary-hover transition-all"
                   style={{ width: `${predProgress}%` }}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-5 pt-4 border-t border-green-500/15">
-              <span className="text-sm font-semibold text-green-400">
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-jagpool-primary/15">
+              <span className="text-sm font-semibold text-jagpool-primary">
                 {allPicksSubmitted
                   ? "Review picks"
                   : advancersLeft > 0
                     ? `${advancersLeft} advancer${advancersLeft > 1 ? "s" : ""} left`
                     : "Pick champion"}
               </span>
-              <Chevron className="text-green-400" />
+              <Chevron className="text-jagpool-primary" />
             </div>
           </div>
         </Link>
@@ -216,7 +216,7 @@ export default async function DashboardPage() {
         </Link>
 
         <Link href="/leaderboard" className="group no-underline">
-          <div className="relative overflow-hidden rounded-2xl border border-jagpool-accent/25 bg-linear-to-br from-jagpool-accent/12 via-jagpool-accent/4 to-transparent p-5 h-full flex flex-col hover:-translate-y-0.5 hover:shadow-lg hover:shadow-jagpool-accent/10 transition-all">
+          <div className="relative overflow-hidden rounded-2xl border border-[#FFD23F]/25 bg-linear-to-br from-jagpool-accent/12 via-jagpool-accent/4 to-transparent p-5 h-full flex flex-col hover:-translate-y-0.5 hover:shadow-lg hover:shadow-jagpool-accent/10 transition-all">
             <div className="flex items-start justify-between mb-5">
               <span className="text-2xl">🏆</span>
               <span className="text-[10px] text-jagpool-accent/60 uppercase tracking-widest font-semibold">
@@ -233,7 +233,7 @@ export default async function DashboardPage() {
                   return (
                     <div
                       key={u.user_id}
-                      className={`flex items-center gap-2 text-xs ${isMe ? "text-jagpool-primary font-semibold" : "text-foreground/60"}`}
+                      className={`flex items-center gap-2 text-xs ${isMe ? "text-[#FFD23F] font-semibold" : "text-foreground/60"}`}
                     >
                       <span className="w-4 shrink-0 text-[10px] text-foreground/30 tabular-nums">
                         {i + 1}
@@ -251,7 +251,7 @@ export default async function DashboardPage() {
                   <div className="text-foreground/20 text-[10px] text-center leading-none">
                     ···
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-jagpool-primary font-semibold">
+                  <div className="flex items-center gap-2 text-xs text-[#FFD23F] font-semibold">
                     <span className="w-4 shrink-0 tabular-nums">#{myRank}</span>
                     <span className="flex-1 truncate">{state.profile?.username}</span>
                     <span className="tabular-nums shrink-0">{points} pts</span>
@@ -260,7 +260,7 @@ export default async function DashboardPage() {
               ) : null}
             </div>
 
-            <div className="flex items-center justify-between mt-5 pt-4 border-t border-jagpool-accent/15">
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#FFD23F]/15">
               <span className="text-sm font-semibold text-jagpool-accent">Rankings</span>
               <Chevron className="text-jagpool-accent" />
             </div>
@@ -269,15 +269,15 @@ export default async function DashboardPage() {
       </div>
 
       {state.profile?.jagsol_balance && state.profile.jagsol_balance !== "0" ? (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-jagpool-primary/5 border border-jagpool-primary/20 text-sm">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-jagpool-primary shrink-0">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#129D49]/5 border border-[#129D49]/20 text-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#129D49] shrink-0">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
           <span className="text-foreground/60">JagSOL balance:</span>
-          <span className="font-mono font-medium text-jagpool-primary">
+          <span className="font-mono font-medium text-[#129D49]">
             {state.profile.jagsol_balance}
           </span>
-          <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 uppercase font-medium">
+          <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[#129D49] uppercase font-medium">
             Verified
           </span>
         </div>
@@ -313,7 +313,7 @@ function Kpi({
 }) {
   return (
     <div className="text-center">
-      <p className={`text-xl sm:text-2xl font-black tabular-nums leading-none ${highlight ? "text-jagpool-primary" : ""}`}>
+      <p className={`text-xl sm:text-2xl font-black tabular-nums leading-none ${highlight ? "text-[#129D49]" : ""}`}>
         {value}
         {sub ? (
           <span className="text-[10px] sm:text-[11px] font-normal text-foreground/30 ml-1">{sub}</span>
@@ -336,7 +336,7 @@ function PickRow({
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-xs text-foreground/50">{label}</span>
-      <span className={`text-xs font-medium tabular-nums ${done ? "text-emerald-400" : "text-amber-300"}`}>
+      <span className={`text-xs font-medium tabular-nums ${done ? "text-[#129D49]" : "text-amber-300"}`}>
         {value}
       </span>
     </div>
@@ -375,22 +375,22 @@ function PredictionsCta({
     : "Pick your champion →";
 
   return (
-    <div className="relative overflow-hidden border border-jagpool-primary/40 bg-jagpool-primary/5 rounded-2xl p-5">
-      <div className="absolute inset-0 bg-linear-to-br from-jagpool-primary/5 to-transparent pointer-events-none" />
+    <div className="relative overflow-hidden border border-[#129D49]/40 bg-[#129D49]/5 rounded-2xl p-5">
+      <div className="absolute inset-0 bg-linear-to-br from-[#129D49]/5 to-transparent pointer-events-none" />
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1 min-w-0">
-          <div className="text-xs text-jagpool-primary uppercase font-semibold mb-1">
+          <div className="text-xs text-[#129D49] uppercase font-semibold mb-1">
             Submit your picks
           </div>
           <div className="font-semibold mb-2">
             Lock in your group + champion picks before time runs out.
           </div>
           <div className="flex items-center gap-2 text-xs flex-wrap">
-            <span className={advancersLeft > 0 ? "text-amber-300" : "text-emerald-400"}>
+            <span className={advancersLeft > 0 ? "text-amber-300" : "text-[#129D49]"}>
               Advancers {advancersPicked}/{totalAdvancers}
             </span>
             <span className="text-white/20">·</span>
-            <span className={!championPicked ? "text-amber-300" : "text-emerald-400"}>
+            <span className={!championPicked ? "text-amber-300" : "text-[#129D49]"}>
               Champion {championPicked ? "✓" : "—"}
             </span>
             <span className="text-white/20">·</span>
@@ -398,7 +398,7 @@ function PredictionsCta({
           </div>
           <div className="mt-3 h-1.5 rounded-full bg-white/10 overflow-hidden w-full max-w-xs">
             <div
-              className="h-full rounded-full bg-linear-to-r from-jagpool-primary to-jagpool-accent transition-all"
+              className="h-full rounded-full bg-linear-to-r from-[#129D49] to-jagpool-accent transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -407,7 +407,7 @@ function PredictionsCta({
           <Countdown target={lockAtIso} label="Locked" />
           <Link
             href="/predictions"
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-jagpool-primary text-white text-sm font-semibold hover:bg-jagpool-primary-hover no-underline transition-colors shadow-md shadow-jagpool-primary/20"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#129D49] text-white text-sm font-semibold hover:bg-[#129D49]-hover no-underline transition-colors shadow-md shadow-[#129D49]/20"
           >
             {ctaLabel}
           </Link>

@@ -82,18 +82,18 @@ export default async function MatchesPage() {
               allDone ? "opacity-60" : ""
             } ${
               isToday
-                ? "border-jagpool-primary/40"
+                ? "border-[#129D49]/40"
                 : hasLive
-                  ? "border-jagpool-primary/25"
+                  ? "border-[#129D49]/25"
                   : "border-white/10"
             }`}
           >
             <div
               className={`flex items-center justify-between px-4 py-3 border-b ${
                 isToday
-                  ? "bg-jagpool-primary/8 border-jagpool-primary/20"
+                  ? "bg-[#129D49]/8 border-[#129D49]/20"
                   : hasLive
-                    ? "bg-jagpool-primary/5 border-jagpool-primary/12"
+                    ? "bg-[#129D49]/5 border-[#129D49]/12"
                     : "bg-white/4 border-white/8"
               }`}
             >
@@ -101,12 +101,12 @@ export default async function MatchesPage() {
                 <span className="text-2xl font-black leading-none">{day}</span>
                 <span className="text-base font-semibold text-foreground/60">{month}</span>
                 {isToday ? (
-                  <span className="text-[10px] font-bold text-jagpool-primary bg-jagpool-primary/15 border border-jagpool-primary/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                  <span className="text-[10px] font-bold text-[#129D49] bg-[#129D49]/15 border border-[#129D49]/30 px-1.5 py-0.5 rounded uppercase tracking-wide">
                     Today
                   </span>
                 ) : null}
                 {hasLive ? (
-                  <span className="text-[10px] font-bold text-jagpool-primary uppercase tracking-wide">
+                  <span className="text-[10px] font-bold text-[#129D49] uppercase tracking-wide">
                     ● Live
                   </span>
                 ) : null}
@@ -146,7 +146,7 @@ function MatchRow({ match, last }: { match: Match; last: boolean }) {
     >
       <span
         className={`text-xs font-mono tabular-nums w-10 shrink-0 ${
-          isDone ? "text-foreground/25" : isLive ? "text-jagpool-primary font-bold" : "text-foreground/45"
+          isDone ? "text-foreground/25" : isLive ? "text-[#129D49] font-bold" : "text-foreground/45"
         }`}
       >
         {isLive ? "LIVE" : formatTime(match.kickoff_at)}

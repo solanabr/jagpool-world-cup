@@ -69,11 +69,11 @@ export default async function AdminResultsPage() {
       </div>
 
       {/* Group stage — record the 32 advancers */}
-      <details open className="rounded-xl border border-jagpool-primary/40 bg-jagpool-primary/5 group">
+      <details open className="rounded-xl border border-[#129D49]/40 bg-[#129D49]/5 group">
         <summary className="cursor-pointer list-none px-4 py-3 flex items-center gap-3">
           <Chevron />
           <h2 className="text-lg font-semibold">Group advancers</h2>
-          <span className="text-[10px] uppercase px-2 py-0.5 rounded border border-jagpool-primary/40 bg-jagpool-primary/20 text-jagpool-primary">
+          <span className="text-[10px] uppercase px-2 py-0.5 rounded border border-[#129D49]/40 bg-[#129D49]/20 text-[#129D49]">
             {initialTeams.length}/32 set
           </span>
         </summary>

@@ -16,7 +16,7 @@ export function ValidatorLogo({
   if (!url || errored) {
     return (
       <div
-        className="rounded-full bg-jagpool-primary/20 border border-jagpool-primary/40 flex items-center justify-center font-semibold text-jagpool-primary shrink-0"
+        className="rounded-full bg-[#129D49]/20 border border-[#129D49]/40 flex items-center justify-center font-semibold text-[#129D49] shrink-0"
         style={{ width: size, height: size, fontSize: size * 0.4 }}
       >
         {name.charAt(0).toUpperCase()}

@@ -92,7 +92,7 @@ export function AdvancersGrid({
             3rd-place: {thirds}/{MAX_THIRD_PLACE_GROUPS}
           </span>
           <span
-            className={`text-sm font-bold tabular-nums ${complete ? "text-jagpool-primary" : "text-foreground/50"}`}
+            className={`text-sm font-bold tabular-nums ${complete ? "text-[#129D49]" : "text-foreground/50"}`}
           >
             {total}/{MAX_TOTAL}
           </span>
@@ -110,7 +110,7 @@ export function AdvancersGrid({
                 </span>
                 <span
                   className={`text-[11px] font-semibold tabular-nums ${
-                    gc >= 2 ? "text-jagpool-primary" : "text-foreground/30"
+                    gc >= 2 ? "text-[#129D49]" : "text-foreground/30"
                   }`}
                 >
                   {gc}
@@ -127,7 +127,7 @@ export function AdvancersGrid({
                       disabled={blocked}
                       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left w-full transition-all ${
                         isPicked
-                          ? "bg-jagpool-primary/15 border border-jagpool-primary/30 text-white font-semibold"
+                          ? "bg-[#129D49]/15 border border-[#129D49]/30 text-white font-semibold"
                           : blocked
                             ? "bg-white/3 border border-white/6 text-foreground/20 cursor-not-allowed"
                             : "bg-white/5 border border-white/8 text-foreground/60 hover:bg-white/8 hover:text-white"
@@ -145,14 +145,14 @@ export function AdvancersGrid({
       </div>
 
       {error ? <p className="text-xs text-red-400">{error}</p> : null}
-      {success ? <p className="text-xs text-emerald-400">{success}</p> : null}
+      {success ? <p className="text-xs text-[#129D49]">{success}</p> : null}
 
       <button
         onClick={save}
         disabled={!complete || busy}
         className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${
           complete && !busy
-            ? "bg-jagpool-primary text-white hover:bg-jagpool-primary-hover"
+            ? "bg-[#129D49] text-white hover:bg-[#129D49]-hover"
             : "bg-white/5 border border-white/10 text-foreground/30 cursor-not-allowed"
         }`}
       >

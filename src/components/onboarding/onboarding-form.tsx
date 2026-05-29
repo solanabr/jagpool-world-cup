@@ -101,7 +101,7 @@ export function OnboardingForm({ validators }: { validators: Validator[] }) {
 
         <div className={`rounded-2xl border p-5 transition-all ${
           selected
-            ? "bg-jagpool-primary/5 border-jagpool-primary/30"
+            ? "bg-[#129D49]/5 border-[#129D49]/30"
             : "bg-white/4 border-white/10 border-dashed"
         }`}>
           <p className="text-xs text-foreground/50 uppercase tracking-wider mb-3 font-medium">
@@ -123,7 +123,7 @@ export function OnboardingForm({ validators }: { validators: Validator[] }) {
                   </span>
                 ) : null}
               </div>
-              <svg className="text-jagpool-primary shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="text-[#129D49] shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             </div>
@@ -151,7 +151,7 @@ export function OnboardingForm({ validators }: { validators: Validator[] }) {
               "This choice cannot be changed after confirming",
             ].map((text) => (
               <li key={text} className="flex items-start gap-2 text-xs text-foreground/60 leading-relaxed">
-                <span className="text-jagpool-primary mt-0.5 shrink-0 font-bold">⚡</span>
+                <span className="text-[#129D49] mt-0.5 shrink-0 font-bold">⚡</span>
                 {text}
               </li>
             ))}
@@ -195,7 +195,7 @@ export function OnboardingForm({ validators }: { validators: Validator[] }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or location…"
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2.5 text-sm outline-none focus:border-jagpool-primary transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2.5 text-sm outline-none focus:border-[#129D49] transition-colors"
             />
           </div>
           <div className="flex gap-1.5 flex-wrap">
@@ -221,8 +221,8 @@ export function OnboardingForm({ validators }: { validators: Validator[] }) {
                 onClick={() => setValidatorId(isSelected ? null : v.id)}
                 className={`text-left p-4 rounded-2xl border transition-all flex gap-3 items-start group ${
                   isSelected
-                    ? "border-jagpool-primary bg-jagpool-primary/10 shadow-lg shadow-jagpool-primary/10"
-                    : "border-white/10 bg-white/4 hover:border-jagpool-primary/35 hover:bg-white/6"
+                    ? "border-[#129D49] bg-[#129D49]/10 shadow-lg shadow-[#129D49]/10"
+                    : "border-white/10 bg-white/4 hover:border-[#129D49]/35 hover:bg-white/6"
                 }`}
               >
                 <ValidatorLogo url={v.logo_url} name={v.name} size={42} />
@@ -230,7 +230,7 @@ export function OnboardingForm({ validators }: { validators: Validator[] }) {
                   <div className="flex items-start justify-between gap-1 mb-0.5">
                     <p className="font-semibold text-sm leading-tight truncate">{v.name}</p>
                     {isSelected ? (
-                      <svg className="text-jagpool-primary shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="text-[#129D49] shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M20 6L9 17l-5-5" />
                       </svg>
                     ) : null}
@@ -264,7 +264,7 @@ export function OnboardingForm({ validators }: { validators: Validator[] }) {
               <button
                 type="button"
                 onClick={() => { setSearch(""); setRegionFilter(null); }}
-                className="text-xs text-jagpool-primary hover:underline"
+                className="text-xs text-[#129D49] hover:underline"
               >
                 Clear filters
               </button>
@@ -288,7 +288,7 @@ function RegionTab({
 }) {
   const activeStyle = color && REGION_COLORS[color]
     ? REGION_COLORS[color]
-    : "bg-jagpool-primary/15 border-jagpool-primary/40 text-jagpool-primary";
+    : "bg-[#129D49]/15 border-[#129D49]/40 text-[#129D49]";
 
   return (
     <button

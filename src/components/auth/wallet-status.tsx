@@ -55,7 +55,7 @@ export function WalletStatus({
             : "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/15"
         }`}
       >
-        <div className="w-8 h-8 rounded-full bg-jagpool-primary relative shrink-0 select-none">
+        <div className="w-8 h-8 rounded-full bg-[#129D49] relative shrink-0 select-none">
           <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-black text-white leading-none">
             {initial}
           </span>
@@ -201,7 +201,7 @@ export function WalletStatus({
               <Link
                 href="/admin"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-jagpool-primary hover:bg-jagpool-primary/8 no-underline font-medium transition-colors"
+                className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-[#129D49] hover:bg-[#129D49]/10 no-underline font-medium transition-colors"
               >
                 <svg
                   width="14"

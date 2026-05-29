@@ -79,7 +79,7 @@ export function GroupPredictionForm({
             </span>
           </span>
           <span
-            className={`text-sm font-bold tabular-nums ${done ? "text-jagpool-primary" : "text-foreground/50"}`}
+            className={`text-sm font-bold tabular-nums ${done ? "text-[#129D49]" : "text-foreground/50"}`}
           >
             {total}/{MAX_TOTAL}
           </span>
@@ -108,7 +108,7 @@ export function GroupPredictionForm({
                       : hasThird
                         ? "text-jagpool-accent"
                         : gc === 2
-                          ? "text-jagpool-primary"
+                          ? "text-[#129D49]"
                           : "text-foreground/40"
                   }`}
                 >
@@ -132,9 +132,9 @@ export function GroupPredictionForm({
                         isPicked &&
                         hasThird &&
                         group.teams.filter((t) => picked.has(t)).at(-1) === team
-                          ? "bg-jagpool-accent/12 border border-jagpool-accent/25 text-white font-semibold"
+                          ? "bg-jagpool-accent/12 border border-[#FFD23F]/25 text-white font-semibold"
                           : isPicked
-                            ? "bg-jagpool-primary/15 border border-jagpool-primary/30 text-white font-semibold"
+                            ? "bg-[#129D49]/15 border border-[#129D49]/30 text-white font-semibold"
                             : isBlocked
                               ? "bg-white/3 border border-white/6 text-foreground/20 cursor-not-allowed"
                               : "bg-white/5 border border-white/8 text-foreground/60 hover:bg-white/8 hover:text-white cursor-pointer"

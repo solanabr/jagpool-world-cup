@@ -84,13 +84,13 @@ export function GroupStageForm({
         locked={locked}
       />
       {error ? <p className="text-xs text-red-400">{error}</p> : null}
-      {success ? <p className="text-xs text-emerald-400">{success}</p> : null}
+      {success ? <p className="text-xs text-[#129D49]">{success}</p> : null}
       <button
         onClick={save}
         disabled={locked || busy}
         className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${
           !locked && !busy
-            ? "bg-jagpool-primary border border-jagpool-primary text-white hover:bg-jagpool-primary-hover"
+            ? "bg-[#129D49] border border-[#129D49] text-white hover:bg-[#129D49]-hover"
             : "bg-white/5 border border-white/10 text-foreground/30 cursor-not-allowed"
         }`}
       >

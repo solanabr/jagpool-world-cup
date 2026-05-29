@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Reveal } from "@/components/ui/reveal";
 
 const GROUP_TEAMS = [
   { flag: "🇧🇷", name: "Brazil" },
@@ -72,11 +73,13 @@ export function PredictShowcase() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-      <div className="relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden">
+      <Reveal>
+      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-emerald-400/25 hover:shadow-[0_16px_40px_-8px_rgba(52,211,153,0.14)] h-full">
+        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-emerald-400/5 via-transparent to-transparent rounded-2xl" />
         <div className="absolute -bottom-3 -right-3 text-8xl leading-none opacity-5 pointer-events-none select-none grayscale">⚽</div>
         <div className="relative flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/35">Group Stage</span>
-          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-full">+5 pts each</span>
+          <span className="text-[10px] font-bold text-[#129D49] bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-full">+5 pts each</span>
         </div>
         <p className="relative text-xs text-foreground/40">Pick who advances from each group</p>
         <div className="relative flex flex-col gap-2 mt-auto">
@@ -95,18 +98,21 @@ export function PredictShowcase() {
               >
                 <span className="text-base">{flag}</span>
                 <span className="text-sm font-medium flex-1">{name}</span>
-                {selected && <span className="text-[10px] font-bold text-jagpool-primary">{pos} ✓</span>}
+                {selected && <span className="text-[10px] font-bold text-[#129D49]">{pos} ✓</span>}
               </button>
             );
           })}
         </div>
       </div>
+      </Reveal>
 
-      <div className="relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden">
+      <Reveal delay={150}>
+      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-[#129D49]/25 hover:shadow-[0_16px_40px_-8px_rgba(249,115,22,0.14)] h-full">
+        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-[#129D49]/6 via-transparent to-transparent rounded-2xl" />
         <div className="absolute -bottom-3 -right-3 text-8xl leading-none opacity-5 pointer-events-none select-none grayscale">👑</div>
         <div className="relative flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/35">Knockouts</span>
-          <span className="text-[10px] font-bold text-jagpool-primary bg-jagpool-primary/10 border border-jagpool-primary/20 px-2 py-0.5 rounded-full">+10 pts</span>
+          <span className="text-[10px] font-bold text-[#129D49] bg-[#129D49]/10 border border-[#129D49]/20 px-2 py-0.5 rounded-full">+10 pts</span>
         </div>
         <p className="relative text-xs text-foreground/40">Pick the winner of every match</p>
         <div className="relative flex flex-col gap-2 mt-auto">
@@ -125,12 +131,15 @@ export function PredictShowcase() {
           />
         </div>
       </div>
+      </Reveal>
 
-      <div className="relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden">
+      <Reveal delay={300}>
+      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-[#FFD23F]/25 hover:shadow-[0_16px_40px_-8px_rgba(251,191,36,0.14)] h-full">
+        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-jagpool-accent/6 via-transparent to-transparent rounded-2xl" />
         <div className="absolute -bottom-3 -right-3 text-8xl leading-none opacity-5 pointer-events-none select-none grayscale">🏆</div>
         <div className="relative flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/35">Champion</span>
-          <span className="text-[10px] font-bold text-jagpool-accent bg-jagpool-accent/15 border border-jagpool-accent/25 px-2 py-0.5 rounded-full">+30 pts</span>
+          <span className="text-[10px] font-bold text-jagpool-accent bg-jagpool-accent/15 border border-[#FFD23F]/25 px-2 py-0.5 rounded-full">+30 pts</span>
         </div>
         <p className="relative text-xs text-foreground/40">Pick the tournament winner</p>
         <div className="relative flex flex-col gap-2 mt-auto">
@@ -147,7 +156,7 @@ export function PredictShowcase() {
                         onClick={() => setVsPick(vsPick === k ? null : k)}
                         className={`flex-1 flex items-center gap-2 px-3 py-3 rounded-xl border transition-all ${
                           picked
-                            ? "bg-jagpool-accent/10 border-jagpool-accent/25"
+                            ? "bg-jagpool-accent/10 border-[#FFD23F]/25"
                             : other
                               ? "bg-white/4 border-transparent opacity-50 hover:opacity-70"
                               : "bg-white/4 border-transparent hover:bg-white/6"
@@ -192,6 +201,7 @@ export function PredictShowcase() {
           )}
         </div>
       </div>
+      </Reveal>
 
     </div>
   );
@@ -210,10 +220,10 @@ function KnockMatch({
 }) {
   const selectedCls =
     accent === "amber"
-      ? "bg-jagpool-accent/10 border-jagpool-accent/25"
-      : "bg-jagpool-primary/10 border-jagpool-primary/20";
+      ? "bg-jagpool-accent/10 border-[#FFD23F]/25"
+      : "bg-[#129D49]/10 border-[#129D49]/20";
   const selectedTextCls =
-    accent === "amber" ? "font-semibold text-jagpool-accent" : "font-semibold text-jagpool-primary";
+    accent === "amber" ? "font-semibold text-jagpool-accent" : "font-semibold text-[#129D49]";
 
   return (
     <div className={`flex items-center gap-2 transition-opacity ${dimmed ? "opacity-35" : ""}`}>

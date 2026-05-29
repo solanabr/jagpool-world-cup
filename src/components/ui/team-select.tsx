@@ -79,7 +79,7 @@ export function TeamSelect({
           disabled
             ? "bg-white/3 border-white/8 text-foreground/30 cursor-not-allowed"
             : open
-              ? "bg-[#1f1f1f] border-jagpool-primary/50 shadow-sm shadow-jagpool-primary/10"
+              ? "bg-[#1f1f1f] border-[#129D49]/50 shadow-sm shadow-[#129D49]/10"
               : "bg-[#1a1a1a] border-white/20 hover:border-white/35 hover:bg-[#1f1f1f]"
         }`}
       >
@@ -130,7 +130,7 @@ export function TeamSelect({
                       onClick={() => { onChange(opt.value); setOpen(false); setQuery(""); }}
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
                         isSelected
-                          ? "bg-jagpool-primary/12 text-jagpool-primary font-medium"
+                          ? "bg-[#129D49]/12 text-[#129D49] font-medium"
                           : "text-foreground/70 hover:bg-white/6 hover:text-foreground"
                       }`}
                     >
@@ -139,7 +139,7 @@ export function TeamSelect({
                       </span>
                       <span className="flex-1 truncate">{opt.label}</span>
                       {isSelected ? (
-                        <svg className="shrink-0 text-jagpool-primary" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="shrink-0 text-[#129D49]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20 6L9 17l-5-5" />
                         </svg>
                       ) : null}

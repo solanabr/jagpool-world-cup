@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "./supabase/server";
 import type { User } from "@/types/db";
@@ -9,7 +11,11 @@ export type AuthenticatedState = {
   redirectPath: string;
 };
 
-export async function resolveAuthenticatedUserState(): Promise<AuthenticatedState | null> {
+export const resolveAuthenticatedUserState = cache(async function (): Promise<AuthenticatedState | null> {
+  const cookieStore = await cookies();
+  const hasAuthCookie = cookieStore.getAll().some((c) => c.name.startsWith("sb-"));
+  if (!hasAuthCookie) return null;
+
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -34,7 +40,7 @@ export async function resolveAuthenticatedUserState(): Promise<AuthenticatedStat
     profile: typed,
     redirectPath: needsOnboarding ? "/onboarding" : "/dashboard",
   };
-}
+});
 
 export async function requireUser() {
   const state = await resolveAuthenticatedUserState();

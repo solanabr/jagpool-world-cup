@@ -37,7 +37,8 @@ export function UserRow({
         body: JSON.stringify({ isAdmin: !user.is_admin }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.details ?? json.error ?? "Update failed");
+      if (!res.ok)
+        throw new Error(json.details ?? json.error ?? "Update failed");
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -47,21 +48,22 @@ export function UserRow({
   }
 
   return (
-    <li className="px-4 py-3 flex items-center gap-3">
-      <div className="flex-1 min-w-0">
+    <li className="px-4 py-3 flex sm:items-center gap-3 flex-col sm:flex-row">
+      <div className="flex-1 min-w-0 gap-1 flex flex-col">
         <div className="font-medium truncate">
           {user.username}
           {isSelf ? (
-            <span className="ml-2 text-xs text-jagpool-primary">(you)</span>
+            <span className="ml-2 text-xs text-[#129D49]">(you)</span>
           ) : null}
           {user.is_admin ? (
-            <span className="ml-2 text-[10px] uppercase px-1.5 py-0.5 rounded border border-jagpool-primary/40 bg-jagpool-primary/10 text-jagpool-primary">
+            <span className="ml-2 text-[10px] uppercase px-1.5 py-0.5 rounded border w-fit  border-[#129D49]/40 bg-[#129D49]/10 text-[#129D49]">
               admin
             </span>
           ) : null}
         </div>
         <div className="text-xs text-foreground/50">
-          {shortAddress(user.wallet_address)} · {user.validator_name ?? "no validator"}
+          {shortAddress(user.wallet_address)} ·{" "}
+          {user.validator_name ?? "no validator"}
           {!user.validator_locked_at ? " · pre-onboarding" : null}
         </div>
       </div>

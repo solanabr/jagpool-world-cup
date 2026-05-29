@@ -10,9 +10,9 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary:
-    "bg-jagpool-primary text-white hover:bg-jagpool-primary-hover disabled:opacity-50",
+    "bg-[#129D49] text-white hover:bg-[#129D49]-hover disabled:opacity-50",
   secondary:
-    "border border-jagpool-primary/70 text-jagpool-primary hover:bg-jagpool-primary/10 disabled:opacity-50",
+    "border border-[#129D49]/70 text-[#129D49] hover:bg-[#129D49]/10 disabled:opacity-50",
   ghost: "text-foreground hover:bg-white/5 disabled:opacity-50",
 };
 

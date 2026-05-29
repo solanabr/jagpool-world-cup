@@ -7,6 +7,7 @@ import bs58 from "bs58";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Toast } from "@/components/ui/toast";
 
 type VerifyErrorBody = {
   error?: string;
@@ -108,7 +109,6 @@ export function SiwsButton({
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
-      // On signature rejection or auth failure, disconnect so the user can retry cleanly
       await disconnect().catch(() => {});
       autoSignedRef.current = false;
     } finally {
@@ -152,34 +152,30 @@ export function SiwsButton({
       ? "Connecting…"
       : connected
         ? compact ? "Sign in" : "Sign in with Solana"
-        : compact ? "Connect wallet" : "Connect Solana wallet";
+        : compact ? "Connect wallet" : "Connect wallet";
 
   if (compact) {
     return (
-      <div className="flex flex-col items-end gap-1">
-        <Button onClick={handleClick} disabled={signing || connecting} size="md">
+      <>
+        <Button onClick={handleClick} disabled={signing || connecting} size="md" className="gradient-btn">
           {label}
         </Button>
-        {error ? (
-          <p className="text-xs text-red-400 text-right max-w-[200px] leading-tight">{error}</p>
-        ) : null}
-      </div>
+        {error ? <Toast message={error} onDismiss={() => setError(null)} /> : null}
+      </>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3 items-center">
+    <>
       <Button
         onClick={handleClick}
         disabled={signing || connecting}
         size="lg"
-        className="min-w-[240px]"
+        className="min-w-[240px] gradient-btn"
       >
         {label}
       </Button>
-      {error ? (
-        <div className="text-sm text-red-400 text-center max-w-xs">{error}</div>
-      ) : null}
-    </div>
+      {error ? <Toast message={error} onDismiss={() => setError(null)} /> : null}
+    </>
   );
 }

@@ -70,7 +70,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center gap-1 px-4 py-1 rounded-lg no-underline transition-colors ${
-                active ? "text-jagpool-primary" : "text-foreground/40"
+                active ? "text-[#129D49]" : "text-foreground/40"
               }`}
             >
               {item.icon}

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(identify /home/nina/jagpool-world-cup/public/brand/jgst.png)",
+      "Bash(python3 -c \"from PIL import Image; img = Image.open\\('/home/nina/jagpool-world-cup/public/brand/jgst.png'\\); print\\(img.size, img.mode\\)\")"
+    ]
+  }
+}
