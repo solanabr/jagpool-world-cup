@@ -42,6 +42,13 @@ function friendlyError(body: VerifyErrorBody | null, status: number): string {
   }
 }
 
+// Shared across every SiwsButton instance on the page. Sign-in is a global
+// operation (one wallet → one session), but this button renders in several
+// places at once (header + landing CTAs, one of which is CSS-hidden but still
+// mounted). A per-instance ref can't see the others, so each instance's
+// auto-sign effect would fire on connect → one signMessage prompt each.
+let signInInFlight = false;
+
 export function SiwsButton({
   redirectTo = "/dashboard",
   compact = false,
@@ -63,6 +70,8 @@ export function SiwsButton({
 
   const signIn = useCallback(async () => {
     if (!publicKey || !signMessage) return;
+    if (signInInFlight) return; // one sign-in across ALL button instances — blocks duplicate signMessage prompts
+    signInInFlight = true;
     setSigning(true);
     setError(null);
 
@@ -113,6 +122,7 @@ export function SiwsButton({
       autoSignedRef.current = false;
     } finally {
       setSigning(false);
+      signInInFlight = false;
     }
   }, [publicKey, signMessage, redirectTo, router, disconnect]);
 
@@ -123,6 +133,12 @@ export function SiwsButton({
       void signIn();
     }
   }, [connected, publicKey, signing, signIn]);
+
+  // Clear the shared guard on disconnect so a cancelled/aborted sign prompt
+  // (whose promise may never settle) can't wedge sign-in for the whole session.
+  useEffect(() => {
+    if (!connected) signInInFlight = false;
+  }, [connected]);
 
   const handleClick = useCallback(() => {
     setError(null);

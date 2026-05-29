@@ -1,12 +1,4 @@
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const BASE58_RE = /^[1-9A-HJ-NP-Za-km-z]+$/;
-
-export function sanitizeUsername(input: unknown): string | null {
-  if (typeof input !== "string") return null;
-  const trimmed = input.trim();
-  if (!USERNAME_RE.test(trimmed)) return null;
-  return trimmed;
-}
 
 export function isValidBase58(input: unknown, minLen = 32, maxLen = 44): boolean {
   if (typeof input !== "string") return false;

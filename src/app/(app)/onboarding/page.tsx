@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 export default async function OnboardingPage() {
   const state = await resolveAuthenticatedUserState();
   if (!state) redirect("/");
-  if (state.profile?.validator_locked_at) redirect("/dashboard");
+  if (state.profile?.x_user_id && state.profile?.validator_locked_at) {
+    redirect("/dashboard");
+  }
 
   const supabase = await createServerSupabaseClient();
   const { data: validators } = await supabase
@@ -42,7 +44,10 @@ export default async function OnboardingPage() {
         </p>
       </div>
 
-      <OnboardingForm validators={(validators as Validator[]) ?? []} />
+      <OnboardingForm
+        validators={(validators as Validator[]) ?? []}
+        profile={state.profile}
+      />
     </div>
   );
 }

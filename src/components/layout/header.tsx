@@ -77,6 +77,7 @@ export async function Header({ transparent = false, staticMode = false }: { tran
         {state ? (
           <WalletStatus
             username={state.profile?.username ?? null}
+            avatarUrl={state.profile?.x_avatar_url ?? null}
             walletAddress={state.walletAddress}
             validatorName={validatorName}
             isAdmin={isAdmin}

@@ -22,17 +22,21 @@ export const resolveAuthenticatedUserState = cache(async function (): Promise<Au
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("users")
     .select("*")
     .eq("id", user.id)
     .maybeSingle();
+  if (profileError) {
+    console.error("[user-state] profile fetch failed", profileError);
+  }
 
   const typed = profile as User | null;
   const walletAddress =
     typed?.wallet_address ?? (user.user_metadata?.wallet_address as string | undefined) ?? "";
 
-  const needsOnboarding = !typed || !typed.username || !typed.validator_locked_at;
+  const needsOnboarding =
+    !typed || !typed.x_user_id || !typed.validator_locked_at;
 
   return {
     userId: user.id,
@@ -50,7 +54,11 @@ export async function requireUser() {
 
 export async function requireOnboardedUser() {
   const state = await requireUser();
-  if (!state.profile || !state.profile.validator_locked_at) {
+  if (
+    !state.profile ||
+    !state.profile.x_user_id ||
+    !state.profile.validator_locked_at
+  ) {
     redirect("/onboarding");
   }
   return state;

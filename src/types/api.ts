@@ -43,7 +43,6 @@ export type SiwsVerifyResponse = {
 // Onboarding
 // =====================================================================
 export type OnboardingRequest = {
-  username: string;
   validatorId: string;
 };
 

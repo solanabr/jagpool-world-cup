@@ -36,7 +36,10 @@ export type Validator = {
 export type User = {
   id: string;
   wallet_address: string;
+  // The verified X @handle once linked; a `user_<pubkey8>` stub until then.
   username: string;
+  x_user_id: string | null;
+  x_avatar_url: string | null;
   validator_id: string | null;
   validator_locked_at: string | null;
   jagsol_verified_at: string | null;
@@ -137,6 +140,7 @@ export type ChampionPrediction = {
 export type UserLeaderboardRow = {
   user_id: string;
   username: string;
+  x_avatar_url: string | null;
   wallet_address: string;
   validator_id: string | null;
   validator_name: string | null;

@@ -91,7 +91,7 @@ export default async function DashboardPage() {
             ) : null}
             <div className="min-w-0">
               <h1 className="text-xl font-black truncate">
-                {state.profile?.username}
+                @{state.profile?.username}
               </h1>
               {validator ? (
                 <p className="text-sm text-foreground/55 flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -238,7 +238,7 @@ export default async function DashboardPage() {
                       <span className="w-4 shrink-0 text-[10px] text-foreground/30 tabular-nums">
                         {i + 1}
                       </span>
-                      <span className="flex-1 truncate">{u.username}</span>
+                      <span className="flex-1 truncate">@{u.username}</span>
                       <span className="tabular-nums text-foreground/40 shrink-0">
                         {u.total_points} pts
                       </span>
@@ -253,7 +253,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-[#FFD23F] font-semibold">
                     <span className="w-4 shrink-0 tabular-nums">#{myRank}</span>
-                    <span className="flex-1 truncate">{state.profile?.username}</span>
+                    <span className="flex-1 truncate">@{state.profile?.username}</span>
                     <span className="tabular-nums shrink-0">{points} pts</span>
                   </div>
                 </>

@@ -8,11 +8,13 @@ import { createClient } from "@/lib/supabase/client";
 
 export function WalletStatus({
   username,
+  avatarUrl,
   walletAddress,
   validatorName,
   isAdmin,
 }: {
   username: string | null;
+  avatarUrl?: string | null;
   walletAddress: string;
   validatorName?: string | null;
   isAdmin?: boolean;
@@ -41,9 +43,10 @@ export function WalletStatus({
     router.refresh();
   }, [disconnect, router]);
 
-  const displayName =
-    username ?? `${walletAddress.slice(0, 4)}…${walletAddress.slice(-4)}`;
-  const initial = displayName[0]?.toUpperCase() ?? "?";
+  const displayName = username
+    ? `@${username}`
+    : `${walletAddress.slice(0, 4)}…${walletAddress.slice(-4)}`;
+  const initial = (username ?? walletAddress)[0]?.toUpperCase() ?? "?";
 
   return (
     <div ref={ref} className="relative">
@@ -55,11 +58,20 @@ export function WalletStatus({
             : "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/15"
         }`}
       >
-        <div className="w-8 h-8 rounded-full bg-[#129D49] relative shrink-0 select-none">
-          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-black text-white leading-none">
-            {initial}
-          </span>
-        </div>
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl}
+            alt=""
+            className="w-8 h-8 rounded-full object-cover shrink-0"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-[#129D49] relative shrink-0 select-none">
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-black text-white leading-none">
+              {initial}
+            </span>
+          </div>
+        )}
         <div className="hidden sm:flex flex-col items-start leading-none">
           <span className="text-sm font-semibold text-foreground/90">
             {displayName}

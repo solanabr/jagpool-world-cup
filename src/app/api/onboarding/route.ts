@@ -1,42 +1,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { resolveAuthenticatedUserState } from "@/lib/user-state";
-import { sanitizeUsername, isValidUuid } from "@/lib/security";
+import { isValidUuid } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   const state = await resolveAuthenticatedUserState();
   if (!state) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as
-    | { username?: string; validatorId?: string }
+    | { validatorId?: string }
     | null;
 
-  const username = sanitizeUsername(body?.username);
-  if (!username) {
-    return NextResponse.json({ error: "invalid_username" }, { status: 400 });
-  }
   if (!body?.validatorId || !isValidUuid(body.validatorId)) {
     return NextResponse.json({ error: "invalid_validator" }, { status: 400 });
   }
 
-  const supabase = await createServerSupabaseClient();
-
-  // Update username first (RLS allows self-update)
-  const { error: updErr } = await supabase
-    .from("users")
-    .update({ username })
-    .eq("id", state.userId);
-  if (updErr) {
-    if (updErr.code === "23505") {
-      return NextResponse.json({ error: "username_taken" }, { status: 409 });
-    }
-    return NextResponse.json(
-      { error: "update_failed", details: updErr.message },
-      { status: 500 },
-    );
+  // X must be linked before locking a validator — enforces the onboarding order
+  // server-side so the permanent validator choice can't be set out of band.
+  if (!state.profile?.x_user_id) {
+    return NextResponse.json({ error: "x_not_linked" }, { status: 403 });
   }
 
-  // Lock validator via SECURITY DEFINER RPC
+  const supabase = await createServerSupabaseClient();
+
+  // Validator selection routes through a SECURITY DEFINER RPC. The X handle is
+  // set by the X-link sync (/auth/callback), not here.
   const { data, error: rpcErr } = await supabase.rpc("lock_validator", {
     p_validator_id: body.validatorId,
   });

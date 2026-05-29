@@ -3,27 +3,8 @@ import {
   clampInt,
   isValidBase58,
   isValidUuid,
-  sanitizeUsername,
   timingSafeEqual,
 } from "@/lib/security";
-
-describe("sanitizeUsername", () => {
-  it("accepts valid usernames", () => {
-    expect(sanitizeUsername("thom")).toBe("thom");
-    expect(sanitizeUsername("kuka_solana_99")).toBe("kuka_solana_99");
-  });
-  it("rejects too short/long", () => {
-    expect(sanitizeUsername("ab")).toBeNull();
-    expect(sanitizeUsername("a".repeat(21))).toBeNull();
-  });
-  it("rejects invalid characters", () => {
-    expect(sanitizeUsername("hi-there")).toBeNull();
-    expect(sanitizeUsername("hello world")).toBeNull();
-  });
-  it("trims whitespace", () => {
-    expect(sanitizeUsername("  thom ")).toBe("thom");
-  });
-});
 
 describe("isValidBase58", () => {
   it("accepts plausible base58 strings", () => {

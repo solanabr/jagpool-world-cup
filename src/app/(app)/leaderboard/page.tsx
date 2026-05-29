@@ -157,16 +157,25 @@ async function renderLiveMode(
                       <span className="text-xl -ml-2 shrink-0">
                         {medals[i]}
                       </span>
-                      <ValidatorLogo
-                        url={u.validator_logo_url}
-                        name={u.validator_name ?? "?"}
-                        size={36}
-                      />
+                      {u.x_avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={u.x_avatar_url}
+                          alt=""
+                          className="w-9 h-9 rounded-full object-cover shrink-0"
+                        />
+                      ) : (
+                        <ValidatorLogo
+                          url={u.validator_logo_url}
+                          name={u.validator_name ?? "?"}
+                          size={36}
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <p
                           className={`font-bold text-sm truncate ${i === 0 ? "text-jagpool-accent" : isMe ? "text-[#129D49]" : ""}`}
                         >
-                          {u.username}
+                          @{u.username}
                           {isMe ? (
                             <span className="ml-1 text-[8px] bg-[#129D49]/15 text-[#129D49] px-1 py-0.5 rounded">
                               you
@@ -203,14 +212,23 @@ async function renderLiveMode(
                         <span className="text-sm w-7 text-center text-foreground/25 tabular-nums shrink-0">
                           {rank}
                         </span>
-                        <ValidatorLogo
-                          url={u.validator_logo_url}
-                          name={u.validator_name ?? "?"}
-                          size={30}
-                        />
+                        {u.x_avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={u.x_avatar_url}
+                            alt=""
+                            className="w-[30px] h-[30px] rounded-full object-cover shrink-0"
+                          />
+                        ) : (
+                          <ValidatorLogo
+                            url={u.validator_logo_url}
+                            name={u.validator_name ?? "?"}
+                            size={30}
+                          />
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 text-sm font-semibold">
-                            {u.username}
+                            @{u.username}
                             {isMe ? (
                               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#129D49]/15 text-[#129D49] font-bold">
                                 you
@@ -411,7 +429,7 @@ async function renderSnapshotMode(
                     <RankNum rank={u.rank} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 text-sm font-semibold">
-                        {u.username}
+                        @{u.username}
                         {isMe ? (
                           <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#129D49]/15 text-[#129D49] font-bold">
                             you
