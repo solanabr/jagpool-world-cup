@@ -10,82 +10,90 @@ export default async function AdminPage() {
   const auth = await requireAdmin();
   if (!auth.ok) redirect("/dashboard");
 
-  // Service-role client (RLS-bypass) is safe here: requireAdmin() above has
-  // already proven the caller is an admin, and this is a server component so
-  // the service key never reaches the browser. The user-scoped client would
-  // count only the admin's own `users` row — `users_self_select` RLS is
-  // self-only — making the Users / New-users stats always read 1.
+  // Service-role (RLS-bypass) is safe: requireAdmin() proved the caller is an
+  // admin and this is a server component, so the key never reaches the browser.
+  // Needed because the user-scoped client's self-only RLS would under-count.
   const supabase = await createServiceRoleClient();
-  const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+  const nowIso = new Date().toISOString();
 
   const [
-    usersRes,
-    validatorsRes,
-    matchesRes,
-    upcomingRes,
-    completedRes,
-    pendingScoringRes,
-    newUsersRes,
-    finalizedGroupsRes,
+    awaitingRes,
+    advancersSetRes,
+    snapshotRes,
+    onboardedRes,
+    championRes,
+    advancerUsersRes,
   ] = await Promise.all([
-    supabase.from("users").select("id", { count: "exact", head: true }),
-    supabase
-      .from("validators")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true),
-    supabase.from("matches").select("id", { count: "exact", head: true }),
+    // Matches whose kickoff has passed but aren't finalized — the to-do list.
     supabase
       .from("matches")
       .select("id", { count: "exact", head: true })
-      .eq("status", "upcoming"),
-    supabase
-      .from("matches")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "completed"),
-    supabase
-      .from("matches")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "completed")
-      .is("winner", null),
-    supabase
-      .from("users")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", dayAgo),
+      .lte("kickoff_at", nowIso)
+      .neq("status", "completed"),
     supabase
       .from("tournament_advancers")
       .select("team_name", { count: "exact", head: true }),
+    supabase
+      .from("reward_snapshots")
+      .select("status")
+      .order("snapshotted_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .not("validator_locked_at", "is", null),
+    supabase
+      .from("champion_predictions")
+      .select("user_id", { count: "exact", head: true }),
+    supabase.from("advancer_predictions").select("user_id"),
   ]);
+
+  if (awaitingRes.error) console.error("[admin] awaiting fetch failed", awaitingRes.error);
+  if (advancersSetRes.error) console.error("[admin] advancers fetch failed", advancersSetRes.error);
+  if (snapshotRes.error) console.error("[admin] snapshot fetch failed", snapshotRes.error);
+  if (onboardedRes.error) console.error("[admin] onboarded fetch failed", onboardedRes.error);
+  if (championRes.error) console.error("[admin] champion fetch failed", championRes.error);
+  if (advancerUsersRes.error) console.error("[admin] advancer-users fetch failed", advancerUsersRes.error);
+
+  const awaitingResults = awaitingRes.count ?? 0;
+  const advancersSet = advancersSetRes.count ?? 0;
+  const snapshotStatus =
+    (snapshotRes.data as { status: string }[] | null)?.[0]?.status ?? "none";
+  const onboarded = onboardedRes.count ?? 0;
+  const championPicked = championRes.count ?? 0;
+  const predictors = new Set(
+    ((advancerUsersRes.data as { user_id: string }[]) ?? []).map((r) => r.user_id),
+  ).size;
+  const noPicks = Math.max(0, onboarded - predictors);
 
   return (
     <div className="flex flex-col gap-8">
       <h1 className="text-3xl font-bold">Admin</h1>
 
       <div>
-        <h2 className="text-sm text-foreground/60 uppercase mb-3">Overview</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Stat label="Users" value={usersRes.count ?? 0} />
-          <Stat label="Active validators" value={validatorsRes.count ?? 0} />
-          <Stat label="Matches" value={matchesRes.count ?? 0} />
-          <Stat label="New users (24h)" value={newUsersRes.count ?? 0} />
+        <h2 className="text-sm text-foreground/60 uppercase mb-3">
+          Needs attention
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Stat
+            label="Matches awaiting results"
+            value={awaitingResults}
+            highlight={awaitingResults > 0}
+          />
+          <Stat label="Advancers set" value={`${advancersSet}/32`} />
+          <Stat label="Reward snapshot" value={snapshotStatus} />
         </div>
       </div>
 
       <div>
-        <h2 className="text-sm text-foreground/60 uppercase mb-3">
-          Match status
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <Stat label="Upcoming" value={upcomingRes.count ?? 0} />
-          <Stat label="Completed" value={completedRes.count ?? 0} />
+        <h2 className="text-sm text-foreground/60 uppercase mb-3">Engagement</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Stat
-            label="Needs winner set"
-            value={pendingScoringRes.count ?? 0}
-            highlight={!!pendingScoringRes.count}
+            label="Predicted advancers"
+            value={`${predictors}/${onboarded}`}
           />
-          <Stat
-            label="Advancers set"
-            value={`${finalizedGroupsRes.count ?? 0}/32`}
-          />
+          <Stat label="Champion picked" value={championPicked} />
+          <Stat label="Onboarded, no picks" value={noPicks} />
         </div>
       </div>
 
