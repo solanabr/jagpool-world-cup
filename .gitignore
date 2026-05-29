@@ -45,4 +45,4 @@ supabase/.branches
 
 # superpowers — local-only docs (specs, plans, brainstorming artifacts)
 docs/superpowers/
-docs/
+docs/.claude/

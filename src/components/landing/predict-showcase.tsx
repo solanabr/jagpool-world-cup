@@ -74,7 +74,7 @@ export function PredictShowcase() {
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
       <Reveal>
-      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-emerald-400/25 hover:shadow-[0_16px_40px_-8px_rgba(52,211,153,0.14)] h-full">
+      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-emerald-400/25 h-full">
         <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-emerald-400/5 via-transparent to-transparent rounded-2xl" />
         <div className="absolute -bottom-3 -right-3 text-8xl leading-none opacity-5 pointer-events-none select-none grayscale">⚽</div>
         <div className="relative flex items-center justify-between">
@@ -107,12 +107,12 @@ export function PredictShowcase() {
       </Reveal>
 
       <Reveal delay={150}>
-      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-[#129D49]/25 hover:shadow-[0_16px_40px_-8px_rgba(249,115,22,0.14)] h-full">
-        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-[#129D49]/6 via-transparent to-transparent rounded-2xl" />
+      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-sky-400/25 h-full">
+        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-sky-400/5 via-transparent to-transparent rounded-2xl" />
         <div className="absolute -bottom-3 -right-3 text-8xl leading-none opacity-5 pointer-events-none select-none grayscale">👑</div>
         <div className="relative flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/35">Knockouts</span>
-          <span className="text-[10px] font-bold text-[#129D49] bg-[#129D49]/10 border border-[#129D49]/20 px-2 py-0.5 rounded-full">+10 pts</span>
+          <span className="text-[10px] font-bold text-sky-400 bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 rounded-full">+10 pts</span>
         </div>
         <p className="relative text-xs text-foreground/40">Pick the winner of every match</p>
         <div className="relative flex flex-col gap-2 mt-auto">
@@ -134,7 +134,7 @@ export function PredictShowcase() {
       </Reveal>
 
       <Reveal delay={300}>
-      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-[#FFD23F]/25 hover:shadow-[0_16px_40px_-8px_rgba(251,191,36,0.14)] h-full">
+      <div className="group relative bg-white/3 border border-white/8 rounded-2xl p-5 flex flex-col gap-4 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-[#FFD23F]/25 h-full">
         <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-jagpool-accent/6 via-transparent to-transparent rounded-2xl" />
         <div className="absolute -bottom-3 -right-3 text-8xl leading-none opacity-5 pointer-events-none select-none grayscale">🏆</div>
         <div className="relative flex items-center justify-between">
@@ -208,22 +208,28 @@ export function PredictShowcase() {
 }
 
 function KnockMatch({
-  a, b, pick, onPick, dimmed = false, accent = "orange", tall = false,
+  a, b, pick, onPick, dimmed = false, accent = "blue", tall = false,
 }: {
   a: { flag: string; name: string };
   b: { flag: string; name: string };
   pick: string | null;
   onPick: (name: string) => void;
   dimmed?: boolean;
-  accent?: "orange" | "amber";
+  accent?: "orange" | "amber" | "blue";
   tall?: boolean;
 }) {
   const selectedCls =
     accent === "amber"
       ? "bg-jagpool-accent/10 border-[#FFD23F]/25"
-      : "bg-[#129D49]/10 border-[#129D49]/20";
+      : accent === "blue"
+        ? "bg-sky-400/10 border-sky-400/20"
+        : "bg-jagpool-primary/10 border-jagpool-primary/20";
   const selectedTextCls =
-    accent === "amber" ? "font-semibold text-jagpool-accent" : "font-semibold text-[#129D49]";
+    accent === "amber"
+      ? "font-semibold text-jagpool-accent"
+      : accent === "blue"
+        ? "font-semibold text-sky-400"
+        : "font-semibold text-jagpool-primary";
 
   return (
     <div className={`flex items-center gap-2 transition-opacity ${dimmed ? "opacity-35" : ""}`}>
