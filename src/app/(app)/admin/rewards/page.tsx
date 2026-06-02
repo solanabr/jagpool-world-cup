@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import { SnapshotCreateForm } from "@/components/admin/snapshot-create-form";
+import { SnapshotCsvButton } from "@/components/admin/snapshot-csv-button";
 import { SnapshotStatusButtons } from "@/components/admin/snapshot-status-buttons";
+import { SnapshotDeleteButton } from "@/components/admin/snapshot-delete-button";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +15,14 @@ type Snapshot = {
   snapshotted_at: string;
   status: "draft" | "finalized" | "paid";
   notes: string | null;
+};
+
+type CsvRow = {
+  rank: number;
+  username: string;
+  wallet_address: string;
+  total_points: number;
+  validator_name: string | null;
 };
 
 const STATUS_BADGE: Record<Snapshot["status"], string> = {
@@ -51,13 +62,36 @@ export default async function AdminRewardsPage() {
 
   const snapshots = (snapshotsRes.data as Snapshot[]) ?? [];
 
+  // Pull every snapshot's ranked rows in one query so each history row can
+  // export its own CSV without a navigation.
+  const rowsBySnapshot = new Map<string, CsvRow[]>();
+  if (snapshots.length) {
+    const { data: rewardUsersData } = await supabase
+      .from("reward_users")
+      .select(
+        "snapshot_id, rank, username, wallet_address, total_points, validator_name",
+      )
+      .in(
+        "snapshot_id",
+        snapshots.map((s) => s.id),
+      )
+      .order("rank", { ascending: true });
+    for (const r of (rewardUsersData as (CsvRow & { snapshot_id: string })[]) ??
+      []) {
+      const list = rowsBySnapshot.get(r.snapshot_id) ?? [];
+      list.push(r);
+      rowsBySnapshot.set(r.snapshot_id, list);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold mb-1">Reward snapshots</h1>
         <p className="text-sm text-foreground/60">
-          Create immutable leaderboard snapshots for payout. Snapshots store
-          rank, points, wallet, and validator at the moment created.
+          Freeze the leaderboard for payout — each snapshot stores rank, points,
+          wallet, and validator at the moment created. View, export CSV, or
+          delete below.
         </p>
       </div>
 
@@ -78,7 +112,10 @@ export default async function AdminRewardsPage() {
                 key={s.id}
                 className="px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
               >
-                <div className="min-w-0">
+                <Link
+                  href={`/admin/rewards/${s.id}`}
+                  className="min-w-0 no-underline hover:opacity-80 transition"
+                >
                   <div className="text-sm">
                     {new Date(s.snapshotted_at).toLocaleString()}
                   </div>
@@ -86,15 +123,27 @@ export default async function AdminRewardsPage() {
                     <div className="text-xs text-foreground/50 truncate">
                       {s.notes}
                     </div>
-                  ) : null}
-                </div>
-                <div className="flex items-center gap-3">
+                  ) : (
+                    <div className="text-xs text-foreground/40">View rows →</div>
+                  )}
+                </Link>
+                <div className="flex items-center gap-2.5 flex-wrap justify-end">
                   <span
                     className={`text-[10px] uppercase px-2 py-1 rounded border ${STATUS_BADGE[s.status]}`}
                   >
                     {s.status}
                   </span>
+                  {(rowsBySnapshot.get(s.id)?.length ?? 0) > 0 ? (
+                    <SnapshotCsvButton
+                      rows={rowsBySnapshot.get(s.id) ?? []}
+                      filename={`snapshot-${new Date(s.snapshotted_at)
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace(/[:T]/g, "-")}.csv`}
+                    />
+                  ) : null}
                   <SnapshotStatusButtons snapshotId={s.id} current={s.status} />
+                  <SnapshotDeleteButton snapshotId={s.id} status={s.status} />
                 </div>
               </li>
             ))}

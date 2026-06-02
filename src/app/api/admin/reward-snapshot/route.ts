@@ -85,3 +85,37 @@ export async function PATCH(request: NextRequest) {
   }
   return NextResponse.json({ snapshot: data });
 }
+
+// DELETE removes a snapshot (the RPC blocks `paid` — a real payout record).
+// Cascades to reward_users + reward_validators.
+export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.reason }, { status: 403 });
+  }
+
+  let body: { snapshotId?: string } | null;
+  try {
+    body = (await request.json()) as typeof body;
+  } catch (err) {
+    console.error("[admin/reward-snapshot DELETE] invalid JSON", err);
+    return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
+
+  if (!body?.snapshotId || !isValidUuid(body.snapshotId)) {
+    return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("delete_reward_snapshot", {
+    p_snapshot_id: body.snapshotId,
+  });
+
+  if (error) {
+    return NextResponse.json(
+      { error: "delete_failed", details: error.message },
+      { status: 400 },
+    );
+  }
+  return NextResponse.json({ ok: true });
+}

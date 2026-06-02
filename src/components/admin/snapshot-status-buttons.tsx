@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 
 type Status = "draft" | "finalized" | "paid";
 
-// Snapshots progress draft → finalized → paid. We allow demotions too (mostly
-// for "I marked paid by mistake" recovery), but the most common path is forward.
+// Snapshots progress draft → finalized. Payouts happen off-app from the CSV
+// export, so there's no in-app "paid" step. Reset-to-draft handles mistakes.
 const NEXT_STATUS: Record<Status, Status | null> = {
   draft: "finalized",
-  finalized: "paid",
+  finalized: null,
   paid: null,
 };
 
