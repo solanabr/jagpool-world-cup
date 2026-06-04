@@ -63,6 +63,7 @@ pg_dump "postgres://..." > supabase-backup.sql
 ## Routes
 
 **User-facing:**
+
 - `/` — landing, sign in with Solana
 - `/onboarding` — username + validator selection (one-time)
 - `/dashboard` — overview, CTA card for predictions, stats
@@ -71,6 +72,7 @@ pg_dump "postgres://..." > supabase-backup.sql
 - `/leaderboard` — live standings, your personal status, payouts when a snapshot is finalized
 
 **Admin:**
+
 - `/admin/matches` — finalize match (scores knockout predictions inline), rescore on correction
 - `/admin/groups` — set group advancers (auto-scores group predictions)
 - `/admin/users` — grant/revoke admin
