@@ -5,6 +5,7 @@ import { PredictShowcase } from "@/components/landing/predict-showcase";
 import { SiwsButton } from "@/components/auth/siws-button";
 import { Reveal } from "@/components/ui/reveal";
 import { AnimatedLeagueTable } from "@/components/landing/animated-league-table";
+import { PrizePool } from "@/components/landing/prize-pool";
 
 const TOURNAMENT_START = "2026-06-11T16:00:00Z";
 
@@ -117,6 +118,17 @@ export default function LandingPage() {
         </section>
 
         <section className="max-w-6xl mx-auto px-4 pb-20">
+          <Reveal className="mb-10">
+            <p className="text-xs gradient-label uppercase tracking-widest font-semibold mb-1">
+              Rewards
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black">Prize pool</h2>
+          </Reveal>
+
+          <PrizePool />
+        </section>
+
+        <section className="max-w-6xl mx-auto px-4 pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-end">
             <Reveal className="flex flex-col gap-5">
               <div>
@@ -159,7 +171,7 @@ export default function LandingPage() {
           <Reveal>
           <div className="relative rounded-3xl border border-white/8 bg-white/2 overflow-hidden px-8 py-14 flex flex-col items-center text-center gap-8">
             <div className="pointer-events-none absolute inset-0" aria-hidden>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-[#129D49]/8 blur-[80px] rounded-full" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-50 bg-[#129D49]/8 blur-[80px] rounded-full" />
             </div>
 
             <div className="relative flex flex-col items-center gap-4">
@@ -194,7 +206,7 @@ export default function LandingPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/brand/jgst.svg" alt="JagPool × Superteam Brazil" className="w-full h-full" />
               </div>
-              <div className="flex flex-col leading-none gap-[3px]">
+              <div className="flex flex-col leading-none gap-0.75">
                 <span className="font-black text-sm text-white/70">
                   JagPool <span className="gradient-text">WC 2026</span>
                 </span>
@@ -363,4 +375,5 @@ const VALIDATOR_FEATURES: { icon: React.ReactNode; text: string }[] = [
     ),
   },
 ];
+
 

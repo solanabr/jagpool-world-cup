@@ -268,6 +268,8 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
+      <PrizesCard myRank={myRank} />
+
       {state.profile?.jagsol_balance && state.profile.jagsol_balance !== "0" ? (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#129D49]/5 border border-[#129D49]/20 text-sm">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#129D49] shrink-0">
@@ -355,6 +357,69 @@ function Chevron({ className }: { className?: string }) {
   );
 }
 
+
+function StarTierIcon({ index }: { index: number }) {
+  const opacity = index === 3 ? "0.55" : index === 4 ? "0.35" : "0.2";
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+const PRIZE_TIERS = [
+  { label: "1st",      amount: "8",   each: false, medal: "🥇", maxRank: 1  },
+  { label: "2nd",      amount: "5",   each: false, medal: "🥈", maxRank: 2  },
+  { label: "3rd",      amount: "3",   each: false, medal: "🥉", maxRank: 3  },
+  { label: "4th",      amount: "2",   each: false, medal: null,  maxRank: 4  },
+  { label: "5th",      amount: "1",   each: false, medal: null,  maxRank: 5  },
+  { label: "6th–10th", amount: "0.5", each: true,  medal: null,  maxRank: 10 },
+];
+
+function PrizesCard({ myRank }: { myRank: number | null }) {
+  const activeTier = myRank != null
+    ? PRIZE_TIERS.findIndex((t) => myRank <= t.maxRank)
+    : -1;
+
+  return (
+    <div className="rounded-2xl overflow-hidden border border-white/8">
+      <div className="grid grid-cols-[2rem_1fr_auto] gap-3 px-5 py-3 bg-white/3 border-b border-white/8">
+        <span />
+        <span className="text-[10px] text-foreground/30 font-bold uppercase tracking-wider">Prize pool</span>
+        <span className="text-[10px] text-foreground/30 font-bold uppercase tracking-wider text-right">jagSOL</span>
+      </div>
+
+      {PRIZE_TIERS.map((t, i) => {
+        const isActive = i === activeTier;
+        return (
+          <div
+            key={t.label}
+            className="grid grid-cols-[2rem_1fr_auto] gap-3 px-5 items-center border-b border-white/5 last:border-b-0 group transition-colors duration-150 hover:bg-white/4"
+            style={{
+              height: 44,
+              backgroundColor: isActive ? "rgba(251,191,36,0.06)" : undefined,
+            }}
+          >
+            <span className="text-center text-sm leading-none flex items-center justify-center">
+              {t.medal ?? <StarTierIcon index={i} />}
+            </span>
+            <span className={`text-xs font-medium transition-colors duration-150 ${isActive ? "text-jagpool-accent" : "text-foreground/55 group-hover:text-foreground/80"}`}>
+              {t.label}{isActive ? " · your rank" : ""}
+            </span>
+            <span className={`text-right text-xs font-bold tabular-nums font-mono transition-colors duration-150 ${isActive ? "text-jagpool-accent" : "text-[#129D49] group-hover:text-[#16c55e]"}`}>
+              {t.amount}{t.each ? " each" : ""}
+            </span>
+          </div>
+        );
+      })}
+
+      <div className="px-5 py-3 flex items-center justify-between border-t border-white/6 bg-white/2">
+        <span className="text-[11px] text-foreground/30">Minimum to participate</span>
+        <span className="text-[11px] font-semibold text-jagpool-accent">2 jagSOL</span>
+      </div>
+    </div>
+  );
+}
 
 function PredictionsCta({
   lockAtIso,
