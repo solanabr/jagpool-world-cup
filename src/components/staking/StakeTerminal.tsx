@@ -137,7 +137,7 @@ export default function StakeTerminal() {
 
         const res = await fetch(
           `/api/jagsol/quote?inputMint=${selectedToken.address}&outputMint=${JAGSOL_MINT}&amount=${baseAmount}`,
-          { signal: controller.signal, cache: "no-store" }
+          { signal: controller.signal, cache: "no-store", redirect: "manual" }
         );
         if (!res.ok) return;
         const data = await res.json();

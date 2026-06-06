@@ -37,6 +37,13 @@ export async function swapJagsolFromJupiter(
     }),
   });
 
+  if (!response.ok) {
+    const err = (await response.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new Error(err?.error ?? `Swap request failed (${response.status})`);
+  }
+
   const data = await response.json();
 
   if (!data?.swapTransaction) {

@@ -32,7 +32,10 @@ export function HeaderMetrics({ outputAmount, isCalculatingRewards = false }: He
     const fetchApy = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/jagsol/apy", { cache: "no-store" });
+        const res = await fetch("/api/jagsol/apy", {
+          cache: "no-store",
+          redirect: "manual",
+        });
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         if (data.apy) setApy(data.apy);

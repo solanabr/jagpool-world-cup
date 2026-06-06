@@ -1,11 +1,11 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const { quoteResponse, userPublicKey } = await req.json();
 
     if (!quoteResponse || !userPublicKey) {
-      return new Response("Missing parameters", { status: 400 });
+      return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
     }
 
     const res = await fetch("https://lite-api.jup.ag/swap/v1/swap", {
@@ -25,15 +25,25 @@ export async function POST(req: NextRequest) {
       }),
     });
 
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: "Jupiter swap request failed" },
+        { status: 502 },
+      );
+    }
+
     const data = await res.json();
 
     if (!data?.swapTransaction) {
-      return new Response("Failed to get swapTransaction", { status: 500 });
+      return NextResponse.json(
+        { error: "No swap transaction returned" },
+        { status: 502 },
+      );
     }
 
-    return Response.json(data);
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Jupiter swap error:", error);
-    return new Response("Internal Server Error", { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
