@@ -30,9 +30,7 @@ export function SiwsButton({ compact = false }: { compact?: boolean }) {
     : connecting
       ? "Connecting…"
       : connected
-        ? compact
-          ? "Sign in"
-          : "Sign in with Solana"
+        ? "Sign in to play"
         : "Connect wallet";
 
   return (
@@ -40,7 +38,7 @@ export function SiwsButton({ compact = false }: { compact?: boolean }) {
       onClick={connectOrSignIn}
       disabled={signing || connecting}
       size={compact ? "md" : "lg"}
-      className={compact ? "gradient-btn" : "min-w-[240px] gradient-btn"}
+      className={compact ? "gradient-btn" : "min-w-60 gradient-btn"}
     >
       {label}
     </Button>

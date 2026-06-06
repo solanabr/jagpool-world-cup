@@ -7,7 +7,7 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import "@solana/wallet-adapter-react-ui/styles.css";
+import "@/app/wallet-adapter.css";
 import { SiwsProvider } from "@/components/auth/siws-provider";
 
 export function WalletContextProvider({ children }: { children: ReactNode }) {

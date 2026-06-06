@@ -82,6 +82,9 @@ export function SiwsProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const autoSignedRef = useRef(false);
   const inFlightRef = useRef(false);
+  // Only auto-sign when the user explicitly triggered connectOrSignIn.
+  // Wallet connections from other UI (e.g. staking terminal) must not redirect.
+  const signInIntentRef = useRef(false);
 
   const signIn = useCallback(async () => {
     if (!publicKey || !signMessage || inFlightRef.current) return;
@@ -147,7 +150,7 @@ export function SiwsProvider({ children }: { children: ReactNode }) {
   // session yet, so an already-authenticated user's wallet reconnecting (e.g.
   // autoConnect on load) never triggers an unsolicited sign prompt.
   useEffect(() => {
-    if (!connected || !publicKey || signing || autoSignedRef.current) return;
+    if (!connected || !publicKey || signing || autoSignedRef.current || !signInIntentRef.current) return;
     autoSignedRef.current = true;
     void (async () => {
       try {
@@ -163,12 +166,16 @@ export function SiwsProvider({ children }: { children: ReactNode }) {
   // signIn's finally and intentionally NOT reset here: clearing it on a spurious
   // disconnect mid-flight would let a reconnect launch a second signIn.
   useEffect(() => {
-    if (!connected) autoSignedRef.current = false;
+    if (!connected) {
+      autoSignedRef.current = false;
+      signInIntentRef.current = false;
+    }
   }, [connected]);
 
   const connectOrSignIn = useCallback(async () => {
     setError(null);
     if (!connected) {
+      signInIntentRef.current = true;
       setVisible(true); // open the wallet-adapter modal; auto-sign fires on connect
       return;
     }

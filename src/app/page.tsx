@@ -6,6 +6,7 @@ import { SiwsButton } from "@/components/auth/siws-button";
 import { Reveal } from "@/components/ui/reveal";
 import { AnimatedLeagueTable } from "@/components/landing/animated-league-table";
 import { PrizePool } from "@/components/landing/prize-pool";
+import StakeSection from "@/components/staking/StakeSection";
 
 const TOURNAMENT_START = "2026-06-11T16:00:00Z";
 
@@ -105,7 +106,9 @@ export default function LandingPage() {
                       <span className="text-foreground/40">{step.icon}</span>
                     </div>
                     <div>
-                      <h3 className="font-black text-base mb-2">{step.title}</h3>
+                      <h3 className="font-black text-base mb-2">
+                        {step.title}
+                      </h3>
                       <p className="text-sm text-foreground/45 leading-relaxed">
                         {step.body}
                       </p>
@@ -116,6 +119,8 @@ export default function LandingPage() {
             ))}
           </div>
         </section>
+
+        <StakeSection />
 
         <section className="max-w-6xl mx-auto px-4 pb-20">
           <Reveal className="mb-10">
@@ -152,7 +157,9 @@ export default function LandingPage() {
                     key={text}
                     className="group flex items-center gap-2.5 bg-white/3 border border-white/8 rounded-xl px-3.5 py-2.5 cursor-default transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/6 hover:border-[#129D49]/30 hover:shadow-[0_4px_20px_rgba(249,115,22,0.08)]"
                   >
-                    <span className="text-foreground/45 shrink-0 transition-colors duration-200 group-hover:text-[#129D49]/80">{icon}</span>
+                    <span className="text-foreground/45 shrink-0 transition-colors duration-200 group-hover:text-[#129D49]/80">
+                      {icon}
+                    </span>
                     <span className="text-sm text-foreground/60 font-medium transition-colors duration-200 group-hover:text-foreground/85">
                       {text}
                     </span>
@@ -169,33 +176,33 @@ export default function LandingPage() {
 
         <section className="max-w-6xl mx-auto px-4 pb-24">
           <Reveal>
-          <div className="relative rounded-3xl border border-white/8 bg-white/2 overflow-hidden px-8 py-14 flex flex-col items-center text-center gap-8">
-            <div className="pointer-events-none absolute inset-0" aria-hidden>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-50 bg-[#129D49]/8 blur-[80px] rounded-full" />
-            </div>
+            <div className="relative rounded-3xl border border-white/8 bg-white/2 overflow-hidden px-8 py-14 flex flex-col items-center text-center gap-8">
+              <div className="pointer-events-none absolute inset-0" aria-hidden>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-50 bg-[#129D49]/8 blur-[80px] rounded-full" />
+              </div>
 
-            <div className="relative flex flex-col items-center gap-4">
-              <p className="text-xs gradient-label uppercase tracking-[0.3em] font-semibold">
-                Ready to play
-              </p>
-              <h2 className="text-3xl sm:text-5xl font-black leading-tight tracking-tight">
-                Your picks won&apos;t make
-                <br />
-                <span className="gradient-text">themselves</span>
-              </h2>
-              <p className="text-foreground/50 max-w-sm leading-relaxed">
-                Tournament kicks off June 11. Connect your wallet, join a
-                validator, and lock in your predictions before the whistle.
-              </p>
-            </div>
+              <div className="relative flex flex-col items-center gap-4">
+                <p className="text-xs gradient-label uppercase tracking-[0.3em] font-semibold">
+                  Ready to play
+                </p>
+                <h2 className="text-3xl sm:text-5xl font-black leading-tight tracking-tight">
+                  Your picks won&apos;t make
+                  <br />
+                  <span className="gradient-text">themselves</span>
+                </h2>
+                <p className="text-foreground/50 max-w-sm leading-relaxed">
+                  Tournament kicks off June 11. Connect your wallet, join a
+                  validator, and lock in your predictions before the whistle.
+                </p>
+              </div>
 
-            <div className="relative flex flex-col items-center gap-3">
-              <SiwsButton />
-              <p className="text-[11px] text-foreground/25">
-                JagSOL required in your wallet to play
-              </p>
+              <div className="relative flex flex-col items-center gap-3">
+                <SiwsButton />
+                <p className="text-[11px] text-foreground/25">
+                  JagSOL required in your wallet to play
+                </p>
+              </div>
             </div>
-          </div>
           </Reveal>
         </section>
 
@@ -204,7 +211,11 @@ export default function LandingPage() {
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/jgst.svg" alt="JagPool × Superteam Brazil" className="w-full h-full" />
+                <img
+                  src="/brand/jgst.svg"
+                  alt="JagPool × Superteam Brazil"
+                  className="w-full h-full"
+                />
               </div>
               <div className="flex flex-col leading-none gap-0.75">
                 <span className="font-black text-sm text-white/70">
@@ -375,5 +386,3 @@ const VALIDATOR_FEATURES: { icon: React.ReactNode; text: string }[] = [
     ),
   },
 ];
-
-
