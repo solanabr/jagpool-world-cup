@@ -415,7 +415,7 @@ function PrizesCard({ myRank }: { myRank: number | null }) {
 
       <div className="px-5 py-3 flex items-center justify-between border-t border-white/6 bg-white/2">
         <span className="text-[11px] text-foreground/30">Minimum to participate</span>
-        <span className="text-[11px] font-semibold text-jagpool-accent">2 jagSOL</span>
+        <span className="text-[11px] font-semibold text-jagpool-accent">1 jagSOL</span>
       </div>
     </div>
   );

@@ -79,7 +79,7 @@ export function PrizePool() {
 
       <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-foreground/30">
         Minimum to participate:
-        <span className="text-jagpool-accent font-semibold">2 jagSOL</span>
+        <span className="text-jagpool-accent font-semibold">1 jagSOL</span>
       </div>
     </div>
   );
