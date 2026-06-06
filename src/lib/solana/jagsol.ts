@@ -1,12 +1,11 @@
 import { PublicKey } from "@solana/web3.js";
 import { getConnection } from "./connection";
 
-const TOKEN_PROGRAM_ID = new PublicKey(
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-);
-const TOKEN_2022_PROGRAM_ID = new PublicKey(
-  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
-);
+const DEFAULT_JAGSOL_MINT = "jag58eRBC1c88LaAsRPspTMvoKJPbnzw9p9fREzHqyV";
+
+export function getJagsolMint(): string {
+  return process.env.NEXT_PUBLIC_JAGSOL_MINT || DEFAULT_JAGSOL_MINT;
+}
 
 export type JagsolBalance = {
   raw: bigint;
@@ -22,7 +21,7 @@ export type JagsolBalance = {
 export async function getJagsolBalance(
   walletAddress: string,
 ): Promise<JagsolBalance | null> {
-  const mintAddress = process.env.NEXT_PUBLIC_JAGSOL_MINT;
+  const mintAddress = getJagsolMint();
   if (!mintAddress) return null;
 
   try {
@@ -33,17 +32,18 @@ export async function getJagsolBalance(
     let totalRaw = 0n;
     let decimals = 9;
 
-    for (const programId of [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID]) {
-      const accounts = await connection.getParsedTokenAccountsByOwner(owner, {
-        mint,
-        programId,
-      });
-      for (const acc of accounts.value) {
-        const info = acc.account.data.parsed.info;
-        const amount = BigInt(info.tokenAmount.amount as string);
-        totalRaw += amount;
-        decimals = info.tokenAmount.decimals as number;
-      }
+    // getTokenAccountsByOwner accepts EITHER a `mint` OR a `programId` filter,
+    // never both — web3.js silently drops `programId` when `mint` is present.
+    // Looping over token programs with both keys would re-query the same
+    // mint-filtered set twice and double-count. A mint filter already returns
+    // accounts under whichever token program owns the mint.
+    const accounts = await connection.getParsedTokenAccountsByOwner(owner, {
+      mint,
+    });
+    for (const acc of accounts.value) {
+      const info = acc.account.data.parsed.info;
+      totalRaw += BigInt(info.tokenAmount.amount as string);
+      decimals = info.tokenAmount.decimals as number;
     }
 
     const uiAmount = Number(totalRaw) / 10 ** decimals;

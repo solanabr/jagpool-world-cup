@@ -3,7 +3,11 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { verifySignature } from "@/lib/siws/verify";
 import { deleteWalletUser, getOrCreateWalletSession } from "@/lib/siws/session";
 import { isValidBase58 } from "@/lib/security";
-import { getJagsolBalance, meetsMinimum } from "@/lib/solana/jagsol";
+import {
+  getJagsolBalance,
+  getJagsolMint,
+  meetsMinimum,
+} from "@/lib/solana/jagsol";
 
 export async function POST(request: NextRequest) {
   if (!process.env.WALLET_PASSWORD_PEPPER) {
@@ -91,7 +95,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (session.wasCreated) {
-    const mintConfigured = !!process.env.NEXT_PUBLIC_JAGSOL_MINT;
+    const mintConfigured = !!getJagsolMint();
     const { data: tournament, error: tournamentError } = await supabase
       .from("tournaments")
       .select("min_jagsol_amount")
