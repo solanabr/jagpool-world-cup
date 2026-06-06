@@ -66,7 +66,8 @@ export function ConnectWalletButton({
       const lamports = Math.round(amount * scale);
 
       const quoteRes = await fetch(
-        `/api/jagsol/quote?inputMint=${selectedToken.address}&outputMint=${targetToken.address}&amount=${lamports}`
+        `/api/jagsol/quote?inputMint=${selectedToken.address}&outputMint=${targetToken.address}&amount=${lamports}`,
+        { redirect: "manual" },
       );
       if (!quoteRes.ok) throw new Error("Failed to get quote");
       const quoteResponse = await quoteRes.json();
