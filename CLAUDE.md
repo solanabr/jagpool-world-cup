@@ -38,6 +38,7 @@ Next.js 16 App Router, TypeScript, Tailwind v4, Supabase, Solana Sign-In. JagPoo
 ## Admin domain actions
 
 Admin work goes through dedicated UI under `/admin/*`:
+
 - `/admin/matches` — finalize match (calls `finalize_match` RPC, scores knockout predictions inline), rescore on correction
 - `/admin/groups` — set group advancers (calls `set_group_advancers`, auto-scores)
 - `/admin/users` — grant/revoke admin (calls `set_user_admin`)
@@ -46,9 +47,11 @@ Admin work goes through dedicated UI under `/admin/*`:
 - `PATCH /api/admin/reward-snapshot` — transitions snapshot status via `set_reward_snapshot_status` RPC
 
 **Admin bootstrap** — there is no env-var allowlist. To grant the first admin, run:
+
 ```sql
 UPDATE public.users SET is_admin = true WHERE wallet_address = '<pubkey>';
 ```
+
 Subsequent admins are added through `/admin/users`. `requireAdmin()` checks `users.is_admin` only — single source of truth, agrees with the SECURITY DEFINER RPCs.
 
 ## User-facing pages
