@@ -4,6 +4,11 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_ROUTES = [
   "/",
   "/api/auth/siws",
+  // Staking widget on the public landing page — logged-out visitors hit these.
+  // Without this the auth gate 307-redirects them to "/", and the client's
+  // res.json() then chokes on the HTML homepage. /api/jagsol/verify self-guards
+  // (returns 401) so listing the whole namespace here is safe.
+  "/api/jagsol",
   "/api/cron",
   ...(process.env.NODE_ENV === "development" ? ["/api/dev"] : []),
 ];
