@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TeamFlag } from "@/components/ui/team-flag";
 import { formatKickoffBRT } from "@/lib/wc2026/dates";
-import { isMatchReadyForPrediction, isPlaceholderTeam } from "@/lib/wc2026/knockout";
+import { isMatchReadyForPrediction, isPlaceholderTeam, isMatchLocked } from "@/lib/wc2026/knockout";
 import type { Match, MatchPrediction } from "@/types/db";
 
 export function KnockoutMatchForm({
@@ -30,8 +30,7 @@ export function KnockoutMatchForm({
   const [saved, setSaved] = useState(false);
 
   const ready = isMatchReadyForPrediction(match.home_team, match.away_team);
-  const locked =
-    !!match.locked_at || new Date(match.kickoff_at).getTime() <= Date.now();
+  const locked = isMatchLocked(match);
   const disabled = !ready || locked;
 
   async function save() {
