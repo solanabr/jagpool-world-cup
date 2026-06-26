@@ -3005,22 +3005,33 @@ grant execute on function public.set_tournament_advancers(uuid, jsonb) to authen
 
 -- ---------------------------------------------------------------------
 -- get_advancer_predictions_for_scoring — service-role helper for scoring.
--- Returns every user's predicted advancer teams for the tournament.
+-- Returns ONE row per user, with their predicted advancer teams aggregated into
+-- an array, so the result stays well under PostgREST's 1000-row response cap. A
+-- per-(user,team) shape returned 2000+ rows and truncated at 1000, silently
+-- dropping ~half the users from scoring (see migration 00032).
 -- ---------------------------------------------------------------------
 create or replace function public.get_advancer_predictions_for_scoring(
   p_tournament_id uuid
 )
-returns table (user_id uuid, team_name text)
+returns table (user_id uuid, teams text[])
 language sql
 security definer
 set search_path = public, pg_temp
 as $$
-  select user_id, team_name
+  select user_id, array_agg(distinct team_name) as teams
   from public.advancer_predictions
-  where tournament_id = p_tournament_id;
+  where tournament_id = p_tournament_id
+  group by user_id;
 $$;
 revoke execute on function public.get_advancer_predictions_for_scoring(uuid) from public, anon, authenticated;
 grant execute on function public.get_advancer_predictions_for_scoring(uuid) to service_role;
+
+-- Advancer scores have NULL prediction-FK columns, so the other unique indexes
+-- don't cover them. This partial unique guard stops a re-run or stray insert from
+-- duplicating a user's advancer points (see migration 00032).
+create unique index if not exists scores_advancer_uniq
+  on public.scores (user_id, tournament_id)
+  where reason = 'advancer';
 
 -- ========================================================================
 -- §00028_knockout_winner_only_and_propagation.sql
