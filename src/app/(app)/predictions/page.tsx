@@ -4,7 +4,7 @@ import { GroupStageForm } from "@/components/predictions/group-stage-form";
 import { KnockoutMatchForm } from "@/components/predictions/knockout-match-form";
 import { Countdown } from "@/components/predictions/countdown";
 import { WC2026_GROUPS } from "@/lib/wc2026/groups";
-import { isMatchReadyForPrediction } from "@/lib/wc2026/knockout";
+import { isMatchReadyForPrediction, isMatchLocked } from "@/lib/wc2026/knockout";
 import type {
   ChampionPrediction,
   Match,
@@ -124,10 +124,7 @@ export default async function PredictionsPage() {
       knockoutStatuses.set(stage, "pending");
       continue;
     }
-    const allLocked = stageMatches.every(
-      (m) =>
-        !!m.locked_at || new Date(m.kickoff_at).getTime() <= now,
-    );
+    const allLocked = stageMatches.every((m) => isMatchLocked(m, now));
     if (allLocked) {
       knockoutStatuses.set(stage, "locked");
       continue;
@@ -135,8 +132,7 @@ export default async function PredictionsPage() {
     const anyOpen = stageMatches.some(
       (m) =>
         isMatchReadyForPrediction(m.home_team, m.away_team) &&
-        !m.locked_at &&
-        new Date(m.kickoff_at).getTime() > now,
+        !isMatchLocked(m, now),
     );
     knockoutStatuses.set(stage, anyOpen ? "active" : "pending");
   }
@@ -217,8 +213,7 @@ export default async function PredictionsPage() {
         const isLateStage = LATE_STAGES.has(stage);
         const openCount = stageMatches.filter((m) =>
           isMatchReadyForPrediction(m.home_team, m.away_team) &&
-          !m.locked_at &&
-          new Date(m.kickoff_at).getTime() > Date.now()
+          !isMatchLocked(m)
         ).length;
         const predictedCount = stageMatches.filter((m) =>
           matchPredsByMatchId.has(m.id),
