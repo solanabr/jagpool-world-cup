@@ -217,12 +217,22 @@ export async function scoreAdvancersAndPersist(
     console.error("[scoreAdvancersAndPersist] predictions fetch failed", predError);
     return { eventsWritten: 0, error: `fetch: ${predError.message}` };
   }
-  const rows = (predData ?? []) as { user_id: string; team_name: string }[];
+  // The RPC aggregates to one row per user ({ user_id, teams }), so the result is
+  // at most (#users) rows and can never hit PostgREST's 1000-row response cap.
+  // (It previously returned one row per (user, team) — 2000+ rows — which the
+  // client silently truncated at 1000, dropping ~half the users from scoring.)
+  // The team_name branch tolerates the pre-aggregation row shape across a deploy.
+  const predRows = (predData ?? []) as Array<{
+    user_id: string;
+    teams?: string[] | null;
+    team_name?: string | null;
+  }>;
 
   const byUser = new Map<string, string[]>();
-  for (const r of rows) {
+  for (const r of predRows) {
     const list = byUser.get(r.user_id) ?? [];
-    list.push(r.team_name);
+    if (Array.isArray(r.teams)) list.push(...r.teams);
+    else if (r.team_name) list.push(r.team_name);
     byUser.set(r.user_id, list);
   }
 
