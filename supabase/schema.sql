@@ -3175,6 +3175,14 @@ as $$
 declare
   v_count int;
 begin
+  -- Guard (§00034): an empty advancer payload is never legitimate (advancers are
+  -- a fixed 32-team slate), so treat it as a no-op instead of a destructive
+  -- delete+insert that would zero every user's advancer points. Champion is NOT
+  -- guarded: it can legitimately be empty (nobody picked the actual champion).
+  if p_reason = 'advancer' and coalesce(jsonb_array_length(p_rows), 0) = 0 then
+    return -1;
+  end if;
+
   delete from public.scores
   where tournament_id = p_tournament_id and reason = p_reason;
 
