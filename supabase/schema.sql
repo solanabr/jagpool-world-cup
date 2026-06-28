@@ -3325,8 +3325,8 @@ begin
 
   select * into v_match from public.matches where id = p_match_id;
   if v_match.id is null then raise exception 'match not found'; end if;
-  -- Lock the prediction window 4h before kickoff.
-  if v_match.locked_at is not null or now() >= v_match.kickoff_at - interval '4 hours' then
+  -- Lock the prediction window at kickoff.
+  if v_match.locked_at is not null or now() >= v_match.kickoff_at then
     raise exception 'match prediction window is closed';
   end if;
 
@@ -3391,13 +3391,13 @@ begin
       select 1 from public.matches m
       where m.id = mp.match_id
         and m.locked_at is null
-        and m.kickoff_at <= now() + interval '4 hours'
+        and m.kickoff_at <= now()
     );
 
   update public.matches
   set locked_at = now(), status = 'locked'
   where locked_at is null
-    and kickoff_at <= now() + interval '4 hours';
+    and kickoff_at <= now();
   get diagnostics v_locked_count = row_count;
 
   delete from public.siws_challenges where expires_at < now();
