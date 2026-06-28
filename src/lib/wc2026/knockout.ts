@@ -17,16 +17,17 @@ export function isMatchReadyForPrediction(home: string | null, away: string | nu
 }
 
 /**
- * How long BEFORE kickoff a knockout match's prediction window closes. Mirrors
- * the server (`submit_match_prediction` / `lock_overdue_matches` use
- * `interval '4 hours'`) — keep the two in sync.
+ * How long BEFORE kickoff a knockout match's prediction window closes. Knockout
+ * predictions lock AT kickoff, so the lead is 0. Mirrors the server gate
+ * (`submit_match_prediction` / `lock_overdue_matches` compare against
+ * `kickoff_at` with no lead) — keep the two in sync.
  */
-export const LOCK_LEAD_MS = 4 * 60 * 60 * 1000;
+export const LOCK_LEAD_MS = 0;
 
 /**
- * True if a match's prediction window is closed: the lock flag is set, or we're
- * within LOCK_LEAD_MS of kickoff. `now` is injectable so a render can use one
- * consistent timestamp across many matches.
+ * True if a match's prediction window is closed: the lock flag is set, or
+ * kickoff has passed (LOCK_LEAD_MS is 0, so the window closes at kickoff). `now`
+ * is injectable so a render can use one consistent timestamp across many matches.
  */
 export function isMatchLocked(
   match: { locked_at: string | null; kickoff_at: string },
