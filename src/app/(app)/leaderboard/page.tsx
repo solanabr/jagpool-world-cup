@@ -45,9 +45,16 @@ type RewardValidatorRow = {
   delegation_status: PayoutStatus;
 };
 
-export default async function LeaderboardPage() {
+export default async function LeaderboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ vt?: string }>;
+}) {
   const state = await requireOnboardedUser();
   const supabase = await createServerSupabaseClient();
+  const { vt } = await searchParams;
+  const validatorView: "qualified" | "total" =
+    vt === "total" ? "total" : "qualified";
 
   // Find the latest finalized/paid snapshot. If one exists, we're in
   // snapshot mode and use frozen reward tables. Otherwise, live RPCs.
@@ -60,12 +67,13 @@ export default async function LeaderboardPage() {
 
   const snapshot = (snapshots as Snapshot[] | null)?.[0] ?? null;
   if (snapshot) return renderSnapshotMode(supabase, state.userId, snapshot);
-  return renderLiveMode(supabase, state.userId);
+  return renderLiveMode(supabase, state.userId, validatorView);
 }
 
 async function renderLiveMode(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   userId: string,
+  validatorView: "qualified" | "total",
 ) {
   // p_limit large enough that the current user is almost certainly in the
   // result set — we slice top 50 for display and search the rest for "you".
@@ -79,7 +87,14 @@ async function renderLiveMode(
   const myIndex = allUsers.findIndex((u) => u.user_id === userId);
   const myRow = myIndex >= 0 ? allUsers[myIndex] : null;
   const myRank = myIndex >= 0 ? myIndex + 1 : null;
-  const validators = (validatorsRes.data as ValidatorLeaderboardRow[]) ?? [];
+  const validatorsRaw = (validatorsRes.data as ValidatorLeaderboardRow[]) ?? [];
+  const validators = [...validatorsRaw].sort((a, b) =>
+    validatorView === "total"
+      ? b.total_points - a.total_points || b.user_count - a.user_count
+      : b.qualified_points - a.qualified_points ||
+        b.total_points - a.total_points ||
+        b.user_count - a.user_count,
+  );
   const top3 = topUsers.slice(0, 3);
 
   return (
@@ -257,17 +272,42 @@ async function renderLiveMode(
       </section>
 
       <section className="flex flex-col gap-4">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-xl font-black">Validator teams</h2>
-          <span className="text-xs text-foreground/35">
-            {validators.length} active
-          </span>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-xl font-black">Validator teams</h2>
+            <span className="text-xs text-foreground/35">
+              {validators.length} active
+            </span>
+          </div>
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/4 p-0.5 text-[11px] font-bold">
+            <a
+              href="?vt=qualified"
+              className={`px-3 py-1 rounded-full transition-colors ${validatorView === "qualified" ? "bg-[#129D49]/20 text-[#129D49]" : "text-foreground/50 hover:text-foreground/80"}`}
+            >
+              Qualified
+            </a>
+            <a
+              href="?vt=total"
+              className={`px-3 py-1 rounded-full transition-colors ${validatorView === "total" ? "bg-[#129D49]/20 text-[#129D49]" : "text-foreground/50 hover:text-foreground/80"}`}
+            >
+              Total points
+            </a>
+          </div>
         </div>
+        <p className="-mt-2 text-xs text-foreground/40">
+          {validatorView === "qualified"
+            ? "Prize points from each team's players in the global top 10 — 1st +5, 2nd +3, 3rd +2, 4th–10th +1."
+            : "Combined points of every player on the team."}
+        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {validators.map((v, i) => {
             const rank = i + 1;
             const isFirst = rank === 1;
+            const primary =
+              validatorView === "qualified"
+                ? v.qualified_points
+                : v.total_points;
             return (
               <div
                 key={v.validator_id}
@@ -286,13 +326,18 @@ async function renderLiveMode(
                   </div>
                   <p className="text-xs text-foreground/35 mt-0.5">
                     {v.user_count} {v.user_count === 1 ? "player" : "players"}
+                    {validatorView === "qualified" && v.qualified_count > 0
+                      ? ` · ${v.qualified_count} in top 10`
+                      : ""}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-black tabular-nums text-lg">
-                    {v.total_points}
+                  <p className="font-black tabular-nums text-lg">{primary}</p>
+                  <p className="text-[10px] text-foreground/30">
+                    {validatorView === "qualified"
+                      ? `${v.total_points} total`
+                      : "pts"}
                   </p>
-                  <p className="text-[10px] text-foreground/30">pts</p>
                 </div>
               </div>
             );

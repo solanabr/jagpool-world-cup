@@ -156,4 +156,6 @@ export type ValidatorLeaderboardRow = {
   vote_account: string;
   user_count: number;
   total_points: number;
+  qualified_points: number;
+  qualified_count: number;
 };
