@@ -2,6 +2,7 @@ import { requireOnboardedUser } from "@/lib/user-state";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { GroupStageForm } from "@/components/predictions/group-stage-form";
 import { KnockoutMatchForm } from "@/components/predictions/knockout-match-form";
+import { KnockoutMatchResult } from "@/components/predictions/knockout-match-result";
 import { Countdown } from "@/components/predictions/countdown";
 import { WC2026_GROUPS } from "@/lib/wc2026/groups";
 import { isMatchReadyForPrediction, isMatchLocked } from "@/lib/wc2026/knockout";
@@ -57,7 +58,7 @@ export default async function PredictionsPage() {
     );
   }
 
-  const [advancerPredsRes, matchPredsRes, championRes, matchesRes] =
+  const [advancerPredsRes, matchPredsRes, championRes, matchesRes, scoresRes] =
     await Promise.all([
       supabase
         .from("advancer_predictions")
@@ -79,11 +80,16 @@ export default async function PredictionsPage() {
         .select("*")
         .eq("tournament_id", tournament.id)
         .order("match_number", { ascending: true }),
+      supabase
+        .from("scores")
+        .select("match_id, points")
+        .eq("user_id", state.userId),
     ]);
   if (advancerPredsRes.error) console.error("[predictions] advancer preds fetch failed", advancerPredsRes.error);
   if (matchPredsRes.error) console.error("[predictions] match preds fetch failed", matchPredsRes.error);
   if (championRes.error) console.error("[predictions] champion fetch failed", championRes.error);
   if (matchesRes.error) console.error("[predictions] matches fetch failed", matchesRes.error);
+  if (scoresRes.error) console.error("[predictions] scores fetch failed", scoresRes.error);
 
   const advancerPicks = (
     (advancerPredsRes.data as { team_name: string }[]) ?? []
@@ -94,6 +100,14 @@ export default async function PredictionsPage() {
 
   const matchPredsByMatchId = new Map<string, MatchPrediction>();
   for (const p of matchPredictions) matchPredsByMatchId.set(p.match_id, p);
+
+  // Sum each finalized match's score rows (knockout winner + late-stage score
+  // bonuses) so a result row can show the points the user actually earned.
+  const pointsByMatchId = new Map<string, number>();
+  for (const r of (scoresRes.data as { match_id: string | null; points: number }[]) ?? []) {
+    if (!r.match_id) continue;
+    pointsByMatchId.set(r.match_id, (pointsByMatchId.get(r.match_id) ?? 0) + r.points);
+  }
 
   const matchesByStage = {} as Record<MatchStage, Match[]>;
   for (const m of matches) {
@@ -256,14 +270,23 @@ export default async function PredictionsPage() {
               </p>
             ) : (
               <ul className="divide-y divide-white/5">
-                {stageMatches.map((m) => (
-                  <KnockoutMatchForm
-                    key={m.id}
-                    match={m}
-                    initial={matchPredsByMatchId.get(m.id) ?? null}
-                    isLateStage={isLateStage}
-                  />
-                ))}
+                {stageMatches.map((m) =>
+                  m.winner ? (
+                    <KnockoutMatchResult
+                      key={m.id}
+                      match={m}
+                      prediction={matchPredsByMatchId.get(m.id) ?? null}
+                      pointsEarned={pointsByMatchId.get(m.id) ?? 0}
+                    />
+                  ) : (
+                    <KnockoutMatchForm
+                      key={m.id}
+                      match={m}
+                      initial={matchPredsByMatchId.get(m.id) ?? null}
+                      isLateStage={isLateStage}
+                    />
+                  ),
+                )}
               </ul>
             )}
           </StageDetails>
