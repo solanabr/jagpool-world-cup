@@ -12,12 +12,18 @@ export function KnockoutMatchResult({
   match,
   prediction,
   pointsEarned,
+  votes,
 }: {
   match: Match;
   prediction: MatchPrediction | null;
   pointsEarned: number;
+  votes?: { home: number; away: number };
 }) {
   const finalized = match.winner === "home" || match.winner === "away";
+  const totalVotes = (votes?.home ?? 0) + (votes?.away ?? 0);
+  const homePct =
+    totalVotes > 0 ? Math.round(((votes?.home ?? 0) / totalVotes) * 100) : 0;
+  const awayPct = 100 - homePct;
   const winnerTeam = !finalized
     ? null
     : match.winner === "home"
@@ -80,6 +86,27 @@ export function KnockoutMatchResult({
             : ""}
         </span>
       </div>
+
+      {totalVotes > 0 ? (
+        <div className="flex items-center gap-2 text-[11px]">
+          <span className="text-sky-300/70 tabular-nums w-9 text-right shrink-0">
+            {homePct}%
+          </span>
+          <div
+            className="flex-1 h-1.5 rounded-full overflow-hidden bg-white/6 flex"
+            title={`${votes?.home ?? 0} picked ${match.home_team}, ${votes?.away ?? 0} picked ${match.away_team}`}
+          >
+            <div className="bg-sky-400/55" style={{ width: `${homePct}%` }} />
+            <div className="bg-amber-400/55" style={{ width: `${awayPct}%` }} />
+          </div>
+          <span className="text-amber-300/70 tabular-nums w-9 shrink-0">
+            {awayPct}%
+          </span>
+          <span className="text-foreground/30 text-[10px] shrink-0">
+            {totalVotes}
+          </span>
+        </div>
+      ) : null}
 
       <div className="flex items-center gap-2 flex-wrap text-xs">
         {prediction ? (
