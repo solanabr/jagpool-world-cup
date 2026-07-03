@@ -271,7 +271,7 @@ export default async function PredictionsPage() {
             ) : (
               <ul className="divide-y divide-white/5">
                 {stageMatches.map((m) =>
-                  m.winner ? (
+                  m.winner || isMatchLocked(m, now) ? (
                     <KnockoutMatchResult
                       key={m.id}
                       match={m}
