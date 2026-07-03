@@ -1,6 +1,7 @@
 import { requireOnboardedUser } from "@/lib/user-state";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { GroupStageForm } from "@/components/predictions/group-stage-form";
+import { GroupStageResult } from "@/components/predictions/group-stage-result";
 import { KnockoutMatchForm } from "@/components/predictions/knockout-match-form";
 import { KnockoutMatchResult } from "@/components/predictions/knockout-match-result";
 import { Countdown } from "@/components/predictions/countdown";
@@ -65,6 +66,7 @@ export default async function PredictionsPage() {
     matchesRes,
     scoresRes,
     votesRes,
+    officialAdvancersRes,
   ] = await Promise.all([
       supabase
         .from("advancer_predictions")
@@ -91,6 +93,10 @@ export default async function PredictionsPage() {
         .select("match_id, points")
         .eq("user_id", state.userId),
       supabase.rpc("get_match_vote_tallies"),
+      supabase
+        .from("tournament_advancers")
+        .select("team_name")
+        .eq("tournament_id", tournament.id),
     ]);
   if (advancerPredsRes.error) console.error("[predictions] advancer preds fetch failed", advancerPredsRes.error);
   if (matchPredsRes.error) console.error("[predictions] match preds fetch failed", matchPredsRes.error);
@@ -98,9 +104,13 @@ export default async function PredictionsPage() {
   if (matchesRes.error) console.error("[predictions] matches fetch failed", matchesRes.error);
   if (scoresRes.error) console.error("[predictions] scores fetch failed", scoresRes.error);
   if (votesRes.error) console.error("[predictions] vote tallies fetch failed", votesRes.error);
+  if (officialAdvancersRes.error) console.error("[predictions] official advancers fetch failed", officialAdvancersRes.error);
 
   const advancerPicks = (
     (advancerPredsRes.data as { team_name: string }[]) ?? []
+  ).map((r) => r.team_name);
+  const officialAdvancers = (
+    (officialAdvancersRes.data as { team_name: string }[]) ?? []
   ).map((r) => r.team_name);
   const matchPredictions = (matchPredsRes.data as MatchPrediction[]) ?? [];
   const championPrediction = championRes.data as ChampionPrediction | null;
@@ -228,13 +238,22 @@ export default async function PredictionsPage() {
           </>
         }
       >
-        <GroupStageForm
-          tournamentId={tournament.id}
-          groups={WC2026_GROUPS}
-          initialPicks={advancerPicks}
-          initialChampion={championPrediction?.team ?? null}
-          locked={groupsLocked}
-        />
+        {groupsLocked && officialAdvancers.length > 0 ? (
+          <GroupStageResult
+            groups={WC2026_GROUPS}
+            picks={advancerPicks}
+            officialAdvancers={officialAdvancers}
+            championPick={championPrediction?.team ?? null}
+          />
+        ) : (
+          <GroupStageForm
+            tournamentId={tournament.id}
+            groups={WC2026_GROUPS}
+            initialPicks={advancerPicks}
+            initialChampion={championPrediction?.team ?? null}
+            locked={groupsLocked}
+          />
+        )}
       </StageDetails>
 
       {KNOCKOUT_STAGE_ORDER.map((stage) => {
