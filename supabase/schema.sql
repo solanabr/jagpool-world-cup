@@ -1454,6 +1454,28 @@ $$;
 
 grant execute on function public.get_validator_leaderboard() to anon, authenticated, service_role;
 
+-- §00037_match_vote_tallies.sql
+-- Aggregate community vote split per match (shown on locked/finalized rows).
+-- match_predictions is self-only under RLS, so this SECURITY DEFINER RPC exposes
+-- counts only — never individual picks — and only for started/finalized matches.
+create or replace function public.get_match_vote_tallies()
+returns table(match_id uuid, home_votes bigint, away_votes bigint)
+language sql
+security definer
+set search_path = public, pg_temp
+as $$
+  select
+    mp.match_id,
+    count(*) filter (where mp.winner = 'home')::bigint as home_votes,
+    count(*) filter (where mp.winner = 'away')::bigint as away_votes
+  from public.match_predictions mp
+  join public.matches m on m.id = mp.match_id
+  where m.winner is not null or m.kickoff_at <= now()
+  group by mp.match_id;
+$$;
+
+grant execute on function public.get_match_vote_tallies() to anon, authenticated, service_role;
+
 -- Drop the broken views — they leaked nothing (only showed self) but they're misleading
 drop view if exists public.user_leaderboard cascade;
 drop view if exists public.validator_leaderboard cascade;

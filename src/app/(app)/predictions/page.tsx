@@ -58,8 +58,14 @@ export default async function PredictionsPage() {
     );
   }
 
-  const [advancerPredsRes, matchPredsRes, championRes, matchesRes, scoresRes] =
-    await Promise.all([
+  const [
+    advancerPredsRes,
+    matchPredsRes,
+    championRes,
+    matchesRes,
+    scoresRes,
+    votesRes,
+  ] = await Promise.all([
       supabase
         .from("advancer_predictions")
         .select("team_name")
@@ -84,12 +90,14 @@ export default async function PredictionsPage() {
         .from("scores")
         .select("match_id, points")
         .eq("user_id", state.userId),
+      supabase.rpc("get_match_vote_tallies"),
     ]);
   if (advancerPredsRes.error) console.error("[predictions] advancer preds fetch failed", advancerPredsRes.error);
   if (matchPredsRes.error) console.error("[predictions] match preds fetch failed", matchPredsRes.error);
   if (championRes.error) console.error("[predictions] champion fetch failed", championRes.error);
   if (matchesRes.error) console.error("[predictions] matches fetch failed", matchesRes.error);
   if (scoresRes.error) console.error("[predictions] scores fetch failed", scoresRes.error);
+  if (votesRes.error) console.error("[predictions] vote tallies fetch failed", votesRes.error);
 
   const advancerPicks = (
     (advancerPredsRes.data as { team_name: string }[]) ?? []
@@ -107,6 +115,14 @@ export default async function PredictionsPage() {
   for (const r of (scoresRes.data as { match_id: string | null; points: number }[]) ?? []) {
     if (!r.match_id) continue;
     pointsByMatchId.set(r.match_id, (pointsByMatchId.get(r.match_id) ?? 0) + r.points);
+  }
+
+  // Community vote split per match (aggregate only, started/finalized matches).
+  const votesByMatchId = new Map<string, { home: number; away: number }>();
+  for (const r of (votesRes.data as
+    | { match_id: string; home_votes: number; away_votes: number }[]
+    | null) ?? []) {
+    votesByMatchId.set(r.match_id, { home: r.home_votes, away: r.away_votes });
   }
 
   const matchesByStage = {} as Record<MatchStage, Match[]>;
@@ -277,6 +293,7 @@ export default async function PredictionsPage() {
                       match={m}
                       prediction={matchPredsByMatchId.get(m.id) ?? null}
                       pointsEarned={pointsByMatchId.get(m.id) ?? 0}
+                      votes={votesByMatchId.get(m.id)}
                     />
                   ) : (
                     <KnockoutMatchForm
