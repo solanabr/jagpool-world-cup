@@ -2,10 +2,12 @@ import { TeamFlag } from "@/components/ui/team-flag";
 import { formatKickoffBRT } from "@/lib/wc2026/dates";
 import type { Match, MatchPrediction } from "@/types/db";
 
-// Read-only row for a FINALIZED knockout match: shows the actual result plus the
-// user's pick, whether it hit, and the points it earned. The predictions page
-// renders this instead of KnockoutMatchForm once a match has a winner, so the
-// editable form component stays untouched.
+// Read-only row for a knockout match that can no longer be edited — either
+// locked (kicked off, awaiting result) or finalized. It ALWAYS surfaces the
+// user's pick (the editable form greys both teams out when locked, hiding the
+// selection); once the match is finalized it also shows the actual winner, a
+// ✓/✗, and the points earned. Rendered by the predictions page in place of
+// KnockoutMatchForm so the editable form component stays untouched.
 export function KnockoutMatchResult({
   match,
   prediction,
@@ -15,22 +17,42 @@ export function KnockoutMatchResult({
   prediction: MatchPrediction | null;
   pointsEarned: number;
 }) {
-  const winnerTeam =
-    match.winner === "home"
+  const finalized = match.winner === "home" || match.winner === "away";
+  const winnerTeam = !finalized
+    ? null
+    : match.winner === "home"
       ? match.home_team
-      : match.winner === "away"
-        ? match.away_team
-        : null;
+      : match.away_team;
   const pickedTeam = prediction
     ? prediction.winner === "home"
       ? match.home_team
       : match.away_team
     : null;
   const correct =
-    prediction != null &&
-    match.winner != null &&
-    prediction.winner === match.winner;
+    finalized && prediction != null && prediction.winner === match.winner;
   const hasScore = match.home_score != null && match.away_score != null;
+  const hasPickedScore =
+    prediction != null &&
+    prediction.home_score != null &&
+    prediction.away_score != null;
+
+  const homeClass =
+    match.winner === "home"
+      ? "font-semibold"
+      : finalized
+        ? "text-foreground/45"
+        : "";
+  const awayClass =
+    match.winner === "away"
+      ? "font-semibold"
+      : finalized
+        ? "text-foreground/45"
+        : "";
+  const pickChipClass = !finalized
+    ? "border-white/15 bg-white/8 text-foreground/80"
+    : correct
+      ? "border-[#129D49]/40 bg-[#129D49]/10 text-[#129D49]"
+      : "border-red-500/30 bg-red-500/10 text-red-400";
 
   return (
     <li className="px-4 py-3 flex flex-col gap-2">
@@ -40,24 +62,12 @@ export function KnockoutMatchResult({
             #{match.match_number}
           </span>
           <span className="truncate text-sm">
-            <span
-              className={
-                match.winner === "home"
-                  ? "font-semibold"
-                  : "text-foreground/50"
-              }
-            >
+            <span className={homeClass}>
               <TeamFlag team={match.home_team ?? ""} className="mr-1" />
               {match.home_team ?? "TBD"}
             </span>
             <span className="mx-2 text-foreground/40">vs</span>
-            <span
-              className={
-                match.winner === "away"
-                  ? "font-semibold"
-                  : "text-foreground/50"
-              }
-            >
+            <span className={awayClass}>
               <TeamFlag team={match.away_team ?? ""} className="mr-1" />
               {match.away_team ?? "TBD"}
             </span>
@@ -65,35 +75,45 @@ export function KnockoutMatchResult({
         </span>
         <span className="text-xs text-foreground/50 whitespace-nowrap">
           {formatKickoffBRT(match.kickoff_at)}
-          {hasScore ? ` · ${match.home_score}–${match.away_score}` : ""}
+          {finalized && hasScore
+            ? ` · ${match.home_score}–${match.away_score}`
+            : ""}
         </span>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap text-xs">
         {prediction ? (
+          <>
+            <span className="text-foreground/40">Your pick:</span>
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-medium ${pickChipClass}`}
+            >
+              <TeamFlag team={pickedTeam ?? ""} />
+              <span>{pickedTeam}</span>
+              {hasPickedScore ? (
+                <span className="opacity-70">
+                  {prediction.home_score}–{prediction.away_score}
+                </span>
+              ) : null}
+              {finalized ? <span aria-hidden>{correct ? "✓" : "✗"}</span> : null}
+            </span>
+          </>
+        ) : (
+          <span className="text-foreground/40">No pick made</span>
+        )}
+        {finalized ? (
           <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-medium ${
-              correct
-                ? "border-[#129D49]/40 bg-[#129D49]/10 text-[#129D49]"
-                : "border-red-500/30 bg-red-500/10 text-red-400"
+            className={`font-bold tabular-nums ${
+              pointsEarned > 0 ? "text-[#129D49]" : "text-foreground/35"
             }`}
           >
-            <TeamFlag team={pickedTeam ?? ""} />
-            <span>{pickedTeam}</span>
-            <span aria-hidden>{correct ? "✓" : "✗"}</span>
+            +{pointsEarned} pts
           </span>
         ) : (
-          <span className="px-2.5 py-1 rounded-lg border border-white/10 bg-white/3 text-foreground/40">
-            No pick
+          <span className="text-foreground/40 uppercase text-[10px] tracking-wide">
+            Locked · awaiting result
           </span>
         )}
-        <span
-          className={`font-bold tabular-nums ${
-            pointsEarned > 0 ? "text-[#129D49]" : "text-foreground/35"
-          }`}
-        >
-          +{pointsEarned} pts
-        </span>
         {winnerTeam ? (
           <span className="text-foreground/35 ml-auto truncate">
             {winnerTeam} won
