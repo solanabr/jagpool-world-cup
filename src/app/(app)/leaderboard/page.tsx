@@ -296,7 +296,7 @@ async function renderLiveMode(
         </div>
         <p className="-mt-2 text-xs text-foreground/40">
           {validatorView === "qualified"
-            ? "jagSOL prizes won by each team's players in the global top 10 — 1st 8, 2nd 5, 3rd 3, 4th 2, 5th 1, 6th–10th 0.5."
+            ? "Points from each team's players in the global top 10, by finishing place — 1st 8, 2nd 5, 3rd 3, 4th 2, 5th 1, 6th–10th 0.5."
             : "Combined points of every player on the team."}
         </p>
 
@@ -336,9 +336,7 @@ async function renderLiveMode(
                 </div>
                 <div className="text-right shrink-0">
                   <p className="font-black tabular-nums text-lg">{primary}</p>
-                  <p className="text-[10px] text-foreground/30">
-                    {validatorView === "qualified" ? "jagSOL" : "pts"}
-                  </p>
+                  <p className="text-[10px] text-foreground/30">pts</p>
                 </div>
               </div>
             );
