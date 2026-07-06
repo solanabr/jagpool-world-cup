@@ -91,7 +91,7 @@ async function renderLiveMode(
   const validators = [...validatorsRaw].sort((a, b) =>
     validatorView === "total"
       ? b.total_points - a.total_points || b.user_count - a.user_count
-      : b.qualified_points - a.qualified_points ||
+      : Number(b.qualified_points) - Number(a.qualified_points) ||
         b.total_points - a.total_points ||
         b.user_count - a.user_count,
   );
@@ -296,7 +296,7 @@ async function renderLiveMode(
         </div>
         <p className="-mt-2 text-xs text-foreground/40">
           {validatorView === "qualified"
-            ? "Prize points from each team's players in the global top 10 — 1st +5, 2nd +3, 3rd +2, 4th–10th +1."
+            ? "jagSOL prizes won by each team's players in the global top 10 — 1st 8, 2nd 5, 3rd 3, 4th 2, 5th 1, 6th–10th 0.5."
             : "Combined points of every player on the team."}
         </p>
 
@@ -304,10 +304,13 @@ async function renderLiveMode(
           {validators.map((v, i) => {
             const rank = i + 1;
             const isFirst = rank === 1;
+            const qualified = Number(v.qualified_points);
             const primary =
               validatorView === "qualified"
-                ? v.qualified_points
-                : v.total_points;
+                ? qualified % 1 === 0
+                  ? String(qualified)
+                  : qualified.toFixed(1)
+                : String(v.total_points);
             return (
               <div
                 key={v.validator_id}
@@ -334,9 +337,7 @@ async function renderLiveMode(
                 <div className="text-right shrink-0">
                   <p className="font-black tabular-nums text-lg">{primary}</p>
                   <p className="text-[10px] text-foreground/30">
-                    {validatorView === "qualified"
-                      ? `${v.total_points} total`
-                      : "pts"}
+                    {validatorView === "qualified" ? "jagSOL" : "pts"}
                   </p>
                 </div>
               </div>

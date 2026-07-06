@@ -1401,7 +1401,7 @@ returns table (
   vote_account text,
   user_count bigint,
   total_points bigint,
-  qualified_points bigint,
+  qualified_points numeric,
   qualified_count bigint
 )
 language sql
@@ -1423,14 +1423,14 @@ as $$
            row_number() over (order by pts desc, username asc) as place
     from player_totals
   ),
-  -- Prize-style points for a player landing in the global top 10.
-  placement(place, place_pts) as (
-    values (1, 5), (2, 3), (3, 2), (4, 1), (5, 1),
-           (6, 1), (7, 1), (8, 1), (9, 1), (10, 1)
+  -- jagSOL prize per finishing place in the global top 10.
+  placement(place, prize) as (
+    values (1, 8.0), (2, 5.0), (3, 3.0), (4, 2.0), (5, 1.0),
+           (6, 0.5), (7, 0.5), (8, 0.5), (9, 0.5), (10, 0.5)
   ),
   validator_qualified as (
     select r.validator_id,
-           sum(p.place_pts)::bigint as q_points,
+           sum(p.prize)::numeric as q_points,
            count(*)::bigint as q_count
     from ranked r
     join placement p on p.place = r.place
@@ -1441,7 +1441,7 @@ as $$
     v.id, v.name, v.logo_url, v.vote_account,
     count(distinct u.id)::bigint as user_count,
     coalesce(sum(s.points), 0)::bigint as total_points,
-    coalesce(vq.q_points, 0) as qualified_points,
+    coalesce(vq.q_points, 0)::numeric as qualified_points,
     coalesce(vq.q_count, 0) as qualified_count
   from public.validators v
   left join public.users u on u.validator_id = v.id and u.validator_locked_at is not null
