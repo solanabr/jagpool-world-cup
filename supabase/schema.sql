@@ -3462,3 +3462,155 @@ begin
 end;
 $$;
 revoke execute on function public.lock_overdue_matches() from public, anon, authenticated;
+
+-- ========================================================================
+-- §00039_allow_draw_scoreline_knockout.sql
+-- Knockout scoreline is normal time (winner decided by ET/penalties), so it can
+-- be level. Re-create submit_match_prediction WITHOUT the winner>loser score
+-- validation. (Overrides the earlier definition above.)
+-- ========================================================================
+create or replace function public.submit_match_prediction(
+  p_match_id uuid,
+  p_winner text,
+  p_home_score integer default null,
+  p_away_score integer default null
+)
+returns match_predictions
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_pred public.match_predictions;
+  v_match public.matches;
+  v_user_locked timestamptz;
+  v_home_real boolean;
+  v_away_real boolean;
+begin
+  if auth.uid() is null then raise exception 'not authenticated'; end if;
+  if p_winner not in ('home','away','draw') then raise exception 'invalid winner'; end if;
+
+  select validator_locked_at into v_user_locked from public.users where id = auth.uid();
+  if v_user_locked is null then raise exception 'must complete onboarding'; end if;
+
+  select * into v_match from public.matches where id = p_match_id;
+  if v_match.id is null then raise exception 'match not found'; end if;
+  if v_match.locked_at is not null or now() >= v_match.kickoff_at then
+    raise exception 'match prediction window is closed';
+  end if;
+
+  if v_match.stage = 'group' then
+    raise exception 'group stage uses group_predictions, not match_predictions';
+  end if;
+
+  if p_winner = 'draw' then
+    raise exception 'knockout matches cannot have draw predictions';
+  end if;
+
+  if v_match.home_team is null or v_match.away_team is null then
+    raise exception 'cannot predict on placeholder match (teams not yet determined)';
+  end if;
+  select
+    exists(select 1 from public.tournament_teams
+            where tournament_id = v_match.tournament_id and team_name = v_match.home_team),
+    exists(select 1 from public.tournament_teams
+            where tournament_id = v_match.tournament_id and team_name = v_match.away_team)
+  into v_home_real, v_away_real;
+  if not v_home_real or not v_away_real then
+    raise exception 'cannot predict on placeholder match (teams not yet determined)';
+  end if;
+
+  insert into public.match_predictions (user_id, match_id, winner, home_score, away_score)
+  values (auth.uid(), p_match_id, p_winner, p_home_score, p_away_score)
+  on conflict (user_id, match_id)
+  do update set winner = excluded.winner, home_score = excluded.home_score,
+                away_score = excluded.away_score, updated_at = now()
+  returning * into v_pred;
+
+  return v_pred;
+end;
+$$;
+revoke execute on function public.submit_match_prediction(uuid, text, int, int) from public, anon;
+grant execute on function public.submit_match_prediction(uuid, text, int, int) to authenticated;
+
+-- ========================================================================
+-- §00040_user_rank_snapshots.sql
+-- Leaderboard position-change arrows: snapshot each user's rank, expose
+-- previous_rank via get_user_leaderboard. (Overrides get_user_leaderboard above.)
+-- ========================================================================
+create table if not exists public.user_rank_snapshots (
+  user_id uuid primary key references public.users(id) on delete cascade,
+  rank int not null,
+  snapshot_at timestamptz not null default now()
+);
+
+alter table public.user_rank_snapshots enable row level security;
+drop policy if exists user_rank_snapshots_public_select on public.user_rank_snapshots;
+create policy user_rank_snapshots_public_select
+  on public.user_rank_snapshots for select using (true);
+
+create or replace function public.snapshot_user_ranks()
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_count int;
+begin
+  insert into public.user_rank_snapshots (user_id, rank, snapshot_at)
+  select user_id, rank, now()
+  from (
+    select u.id as user_id,
+           row_number() over (
+             order by coalesce(sum(s.points), 0) desc, u.username asc
+           ) as rank
+    from public.users u
+    left join public.scores s on s.user_id = u.id
+    where u.validator_locked_at is not null
+    group by u.id, u.username
+  ) r
+  on conflict (user_id)
+  do update set rank = excluded.rank, snapshot_at = excluded.snapshot_at;
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$$;
+revoke execute on function public.snapshot_user_ranks() from public, anon, authenticated;
+grant execute on function public.snapshot_user_ranks() to service_role;
+
+drop function if exists public.get_user_leaderboard(int);
+create function public.get_user_leaderboard(p_limit int default 50)
+returns table (
+  user_id uuid,
+  username text,
+  x_avatar_url text,
+  wallet_address text,
+  validator_id uuid,
+  validator_name text,
+  validator_logo_url text,
+  total_points bigint,
+  score_events bigint,
+  previous_rank int
+)
+language sql
+security definer
+set search_path = public, pg_temp
+as $$
+  select
+    u.id, u.username, u.x_avatar_url, u.wallet_address,
+    u.validator_id, v.name, v.logo_url,
+    coalesce(sum(s.points)::bigint, 0),
+    count(s.id)::bigint,
+    rs.rank
+  from public.users u
+  left join public.validators v on v.id = u.validator_id
+  left join public.scores s on s.user_id = u.id
+  left join public.user_rank_snapshots rs on rs.user_id = u.id
+  where u.validator_locked_at is not null
+  group by u.id, u.username, u.x_avatar_url, u.wallet_address,
+           u.validator_id, v.name, v.logo_url, rs.rank
+  order by coalesce(sum(s.points), 0) desc, u.username asc
+  limit p_limit;
+$$;
+grant execute on function public.get_user_leaderboard(int) to anon, authenticated, service_role;

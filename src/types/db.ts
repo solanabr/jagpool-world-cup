@@ -147,6 +147,9 @@ export type UserLeaderboardRow = {
   validator_logo_url: string | null;
   total_points: number;
   score_events: number;
+  // Rank at the previous snapshot (from user_rank_snapshots). null until the
+  // first snapshot exists; used to render the ▲/▼ position-change indicator.
+  previous_rank: number | null;
 };
 
 export type ValidatorLeaderboardRow = {
