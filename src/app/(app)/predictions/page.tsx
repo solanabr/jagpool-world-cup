@@ -299,6 +299,14 @@ export default async function PredictionsPage() {
               </>
             }
           >
+            {isLateStage && stageMatches.length > 0 ? (
+              <p className="px-4 pt-3 text-[11px] text-foreground/45 flex items-start gap-1.5">
+                <span aria-hidden>⏱️</span>
+                <span>
+                  Score is <span className="font-semibold text-foreground/60">normal time</span> (90&apos; + stoppage) — extra time &amp; penalties decide who advances. A level score like 1–1 is fine; just also pick who goes through.
+                </span>
+              </p>
+            ) : null}
             {stageMatches.length === 0 ? (
               <p className="px-4 py-4 text-sm text-foreground/50">
                 Bracket for this round hasn&apos;t been set up yet.

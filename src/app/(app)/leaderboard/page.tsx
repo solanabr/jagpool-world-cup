@@ -119,6 +119,9 @@ async function renderLiveMode(
                 <p className="text-2xl font-black text-[#129D49] leading-none">
                   #{myRank}
                 </p>
+                {myRow ? (
+                  <RankDelta previous={myRow.previous_rank} current={myRank} />
+                ) : null}
                 <span className="text-[10px] font-bold text-[#129D49] bg-[#129D49]/12 border border-[#129D49]/25 px-2 py-0.5 rounded-full uppercase tracking-widest">
                   Live
                 </span>
@@ -169,8 +172,9 @@ async function renderLiveMode(
                       key={u.user_id}
                       className={`rounded-2xl border px-4 py-3.5 flex items-center gap-3 ${styles[i]}`}
                     >
-                      <span className="text-xl -ml-2 shrink-0">
-                        {medals[i]}
+                      <span className="-ml-2 shrink-0 flex flex-col items-center gap-0.5 leading-none">
+                        <span className="text-xl">{medals[i]}</span>
+                        <RankDelta previous={u.previous_rank} current={i + 1} />
                       </span>
                       {u.x_avatar_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -224,8 +228,11 @@ async function renderLiveMode(
                         key={u.user_id}
                         className={`flex items-center gap-3 px-4 py-3 transition-colors ${isMe ? "bg-[#129D49]/8 border-l-2 border-l-[#129D49]" : "hover:bg-white/3"}`}
                       >
-                        <span className="text-sm w-7 text-center text-foreground/25 tabular-nums shrink-0">
-                          {rank}
+                        <span className="w-7 shrink-0 flex flex-col items-center gap-0.5 leading-none">
+                          <span className="text-sm text-foreground/25 tabular-nums">
+                            {rank}
+                          </span>
+                          <RankDelta previous={u.previous_rank} current={rank} />
                         </span>
                         {u.x_avatar_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -515,6 +522,27 @@ async function renderSnapshotMode(
         <p className="text-xs text-foreground/30">{snapshot.notes}</p>
       ) : null}
     </div>
+  );
+}
+
+function RankDelta({
+  previous,
+  current,
+}: {
+  previous: number | null;
+  current: number;
+}) {
+  if (previous == null || previous === current) return null;
+  const delta = previous - current; // +ve = climbed (rank number went down)
+  const up = delta > 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 text-[9px] font-bold tabular-nums leading-none ${up ? "text-[#129D49]" : "text-red-400"}`}
+      title={`${up ? "Up" : "Down"} ${Math.abs(delta)} since the last update`}
+    >
+      <span aria-hidden>{up ? "▲" : "▼"}</span>
+      {Math.abs(delta)}
+    </span>
   );
 }
 
