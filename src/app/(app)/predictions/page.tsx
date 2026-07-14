@@ -303,7 +303,7 @@ export default async function PredictionsPage() {
               <p className="px-4 pt-3 text-[11px] text-foreground/45 flex items-start gap-1.5">
                 <span aria-hidden>⏱️</span>
                 <span>
-                  Score is <span className="font-semibold text-foreground/60">normal time</span> (90&apos; + stoppage) — extra time &amp; penalties decide who advances. A level score like 1–1 is fine; just also pick who goes through.
+                  Score = <span className="font-semibold text-foreground/60">final result before penalties</span> (normal time + extra time). If it&apos;s still level, penalties decide who advances — so a draw like 1–1 is fine; just also pick who goes through.
                 </span>
               </p>
             ) : null}
