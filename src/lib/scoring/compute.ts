@@ -30,9 +30,11 @@ export type ScoreEvent =
  * per-match in the JagPool rules — they score via advancer predictions instead).
  *
  * Returns events for:
- *   - knockout_winner: prediction.winner === match.winner
- *   - late_stage_winner_score: late stage + predicted winner's score matches
- *   - late_stage_loser_score:  late stage + predicted loser's score matches
+ *   - knockout_winner (10): prediction.winner === match.winner
+ *   - late_stage_winner_score (5): actual winner's goals predicted correctly
+ *   - late_stage_loser_score  (5): actual loser's goals predicted correctly
+ * The two late-stage score bonuses are INDEPENDENT of the winner pick — a
+ * correct scoreline scores even if you picked the wrong team to advance.
  */
 export function scoreMatchPrediction(
   prediction: MatchPrediction,
@@ -40,18 +42,23 @@ export function scoreMatchPrediction(
 ): ScoreEvent[] {
   if (match.status !== "completed" || !match.winner) return [];
   if (!isKnockout(match.stage)) return [];
-  if (prediction.winner !== match.winner) return [];
 
-  const events: ScoreEvent[] = [
-    {
+  const events: ScoreEvent[] = [];
+
+  // Winner: 10 pts, only when the pick matches who actually advanced.
+  if (prediction.winner === match.winner) {
+    events.push({
       reason: REASONS.KNOCKOUT_WINNER,
       userId: prediction.user_id,
       matchId: match.id,
       matchPredictionId: prediction.id,
       points: POINTS.KNOCKOUT_WINNER_HIT,
-    },
-  ];
+    });
+  }
 
+  // Late-stage score bonuses are INDEPENDENT of the winner pick: getting a
+  // team's exact goals right earns +5 even if you picked the wrong side to
+  // advance. (winner/loser here refer to the ACTUAL result, not the pick.)
   if (!isLateStage(match.stage)) return events;
   if (match.winner === "draw") return events; // shouldn't happen on knockout; defensive
 

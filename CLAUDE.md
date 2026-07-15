@@ -32,7 +32,7 @@ Next.js 16 App Router, TypeScript, Tailwind v4, Supabase, Solana Sign-In. JagPoo
 - **Scoring rules** (v2, no multipliers):
   - Group advancer hit: 5 pts each (max 10 per group, no bonus)
   - Knockout winner: 10 pts
-  - Late-stage (semi, third-place, final) winner-score / loser-score: +5 pts each
+  - Late-stage (semi, third-place, final) winner-score / loser-score: +5 pts each, awarded **independently of the winner pick** — a correct scoreline scores even if you picked the wrong side to advance (only the +10 winner bonus needs the pick correct). Score = normal time + extra time, before penalties.
   - Champion: 30 pts
 
 ## Admin domain actions
