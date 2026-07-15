@@ -80,7 +80,8 @@ describe("scoreMatchPrediction — knockout rules", () => {
     ).toEqual([]);
   });
 
-  it("returns empty for wrong winner", () => {
+  it("returns empty for wrong winner in a winner-only round (no score bonuses)", () => {
+    // round_of_16 (default) is winner-only, so a wrong winner scores nothing.
     expect(
       scoreMatchPrediction(makeMatchPred({ winner: "away" }), makeMatch()),
     ).toEqual([]);
@@ -166,6 +167,23 @@ describe("scoreMatchPrediction — late-stage score bonuses (semi, third, final)
     );
     const reasons = events.map((e) => e.reason);
     expect(reasons).toEqual([REASONS.KNOCKOUT_WINNER]);
+  });
+
+  it("awards score bonuses even when the winner pick is WRONG (independent)", () => {
+    // Match: home wins 2-1. Prediction: AWAY wins 2-1 — wrong winner, right scoreline.
+    const events = scoreMatchPrediction(
+      makeMatchPred({ winner: "away", home_score: 2, away_score: 1 }),
+      makeMatch({ stage: "semi", home_score: 2, away_score: 1 }),
+    );
+    const reasons = events.map((e) => e.reason).sort();
+    expect(reasons).toEqual(
+      [REASONS.LATE_STAGE_LOSER_SCORE, REASONS.LATE_STAGE_WINNER_SCORE].sort(),
+    );
+    expect(reasons).not.toContain(REASONS.KNOCKOUT_WINNER);
+    const total = events.reduce((s, e) => s + e.points, 0);
+    expect(total).toBe(
+      POINTS.LATE_STAGE_WINNER_SCORE_HIT + POINTS.LATE_STAGE_LOSER_SCORE_HIT,
+    );
   });
 
   it("does not award score bonuses when prediction has null scores", () => {
