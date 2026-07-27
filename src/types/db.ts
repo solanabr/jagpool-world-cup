@@ -76,6 +76,9 @@ export type Match = {
   away_score: number | null;
   winner: MatchWinner | null;
   locked_at: string | null;
+  // Admin escape hatch: when true the prediction window is forced OPEN for this
+  // match regardless of locked_at / kickoff. Set per stage from /admin/results.
+  prediction_open_override: boolean;
   parent_match_a: string | null;
   parent_match_b: string | null;
   venue: string | null;
