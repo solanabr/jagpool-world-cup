@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { AdvancersGrid } from "@/components/admin/advancers-grid";
 import { FinalizeMatchRow } from "@/components/admin/finalize-match-row";
 import { StageLockToggle } from "@/components/admin/stage-lock-toggle";
+import { PrefillBracketButton } from "@/components/admin/prefill-bracket-button";
+import { PrefillRoundButton } from "@/components/admin/prefill-round-button";
 import { WC2026_GROUPS } from "@/lib/wc2026/groups";
 import type { Match, MatchStage } from "@/types/db";
 
@@ -91,7 +93,8 @@ export default async function AdminResultsPage() {
             />
           </span>
         </summary>
-        <div className="border-t border-white/5 p-4">
+        <div className="border-t border-white/5 p-4 flex flex-col gap-4">
+          <PrefillBracketButton />
           <AdvancersGrid
             tournamentId={tournamentId}
             groups={WC2026_GROUPS}
@@ -117,6 +120,7 @@ export default async function AdminResultsPage() {
                   {done}/{stageMatches.length} finalized ·{" "}
                   {LATE_STAGES.has(stage) ? "score + winner" : "winner only"}
                 </span>
+                <PrefillRoundButton matches={stageMatches} />
                 <StageLockToggle
                   stage={stage}
                   open={stageMatches.every((m) => m.prediction_open_override)}
