@@ -30,9 +30,16 @@ export const LOCK_LEAD_MS = 0;
  * is injectable so a render can use one consistent timestamp across many matches.
  */
 export function isMatchLocked(
-  match: { locked_at: string | null; kickoff_at: string },
+  match: {
+    locked_at: string | null;
+    kickoff_at: string;
+    prediction_open_override?: boolean | null;
+  },
   now: number = Date.now(),
 ): boolean {
+  // Admin force-open wins over both the lock flag and the kickoff gate. Mirrors
+  // submit_match_prediction, which checks prediction_open_override first.
+  if (match.prediction_open_override) return false;
   if (match.locked_at) return true;
   return new Date(match.kickoff_at).getTime() - LOCK_LEAD_MS <= now;
 }

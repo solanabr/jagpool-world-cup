@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { AdvancersGrid } from "@/components/admin/advancers-grid";
 import { FinalizeMatchRow } from "@/components/admin/finalize-match-row";
+import { StageLockToggle } from "@/components/admin/stage-lock-toggle";
 import { WC2026_GROUPS } from "@/lib/wc2026/groups";
 import type { Match, MatchStage } from "@/types/db";
 
@@ -35,7 +36,11 @@ export default async function AdminResultsPage() {
 
   const supabase = await createServerSupabaseClient();
   const [tournamentRes, matchesRes, advancersRes] = await Promise.all([
-    supabase.from("tournaments").select("id").eq("is_active", true).maybeSingle(),
+    supabase
+      .from("tournaments")
+      .select("id, group_lock_at")
+      .eq("is_active", true)
+      .maybeSingle(),
     supabase.from("matches").select("*").order("match_number", { ascending: true }),
     supabase.from("tournament_advancers").select("team_name"),
   ]);
@@ -76,6 +81,15 @@ export default async function AdminResultsPage() {
           <span className="text-[10px] uppercase px-2 py-0.5 rounded border border-[#129D49]/40 bg-[#129D49]/20 text-[#129D49]">
             {initialTeams.length}/32 set
           </span>
+          <span className="ml-auto">
+            <StageLockToggle
+              stage="group"
+              open={
+                !tournamentRes.data?.group_lock_at ||
+                new Date(tournamentRes.data.group_lock_at).getTime() > Date.now()
+              }
+            />
+          </span>
         </summary>
         <div className="border-t border-white/5 p-4">
           <AdvancersGrid
@@ -98,10 +112,16 @@ export default async function AdminResultsPage() {
                 <Chevron />
                 <h2 className="text-lg font-semibold">{STAGE_LABELS[stage]}</h2>
               </div>
-              <span className="text-xs text-foreground/40">
-                {done}/{stageMatches.length} finalized ·{" "}
-                {LATE_STAGES.has(stage) ? "score + winner" : "winner only"}
-              </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-xs text-foreground/40">
+                  {done}/{stageMatches.length} finalized ·{" "}
+                  {LATE_STAGES.has(stage) ? "score + winner" : "winner only"}
+                </span>
+                <StageLockToggle
+                  stage={stage}
+                  open={stageMatches.every((m) => m.prediction_open_override)}
+                />
+              </div>
             </summary>
             <ul className="border-t border-white/5 divide-y divide-white/5">
               {stageMatches.map((m) => (
